@@ -106,7 +106,7 @@ int main() {
   Record record;
   
   record.id = 1;
-  strcpy(record.city, cities[0]);
+  strcpy(record.city, cities[1]);
   strcpy(record.name, names[1]);
   strcpy(record.surname, surnames[1]);
 

@@ -81,7 +81,8 @@ HT_ErrorCode HT_PrintAllEntries(int indexDesc, int *id) {
   printf("Entering HT_PrintAllEntries\n");
   BF_Block *block;
   BF_Block_Init(&block);
-  int i = 1;
+  
+  int i = 2;
   Record record;
 
   CALL_BF(BF_GetBlock(indexDesc, i, block));
