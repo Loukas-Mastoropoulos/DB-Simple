@@ -100,27 +100,23 @@ int main() {
 
   printf("start...\n\n");
   ////////////////////////////////////////////////////////////////////////////////////////////////
-  int fd;
+  int id;
   int depth = 3;
   const char* filename = "temp.db";
   Record record;
   
   record.id = 1;
-  strcpy(record.city, cities[1]);
+  strcpy(record.city, cities[0]);
   strcpy(record.name, names[1]);
   strcpy(record.surname, surnames[1]);
 
 
   HT_Init();
   HT_CreateIndex(filename, depth);
-  HT_OpenIndex(filename, &fd);
-  HT_InsertEntry(fd, record);
-  HT_PrintAllEntries(fd, NULL);
-  HT_CloseFile(fd);  
-  
-
-
-
+  HT_OpenIndex(filename, &id);
+  HT_InsertEntry(id, record);
+  HT_PrintAllEntries(id, NULL);
+  HT_CloseFile(id);  
 
 
   ////////////////////////////////////////////////////////////////////////////////////////////////
