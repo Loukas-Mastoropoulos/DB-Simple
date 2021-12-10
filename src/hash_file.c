@@ -24,6 +24,12 @@ indexNode indexArray[MAX_OPEN_FILES];
 HT_ErrorCode HT_Init() {
   //insert code here
   //printf("This is HT_Init start\n");
+
+  if(MAX_OPEN_FILES == 0){
+    printf("Runner.exe needs at least one file to run.Please ensure that MAX_OPEN_FILES is not 0\n");
+    return HT_ERROR;
+  }
+
   CALL_BF(BF_Init(LRU));
   for(int i = 0; i < MAX_OPEN_FILES; i++)indexArray[i].used = 0;
   //printf("End of HT_Init\n");
@@ -64,6 +70,8 @@ HT_ErrorCode HT_OpenIndex(const char *fileName, int *indexDesc){
   CALL_BF(BF_OpenFile(fileName, &fd));
   int pos = (*indexDesc);
   indexArray[pos].fd = fd;
+
+  indexArray[pos].used = 1;  // Position pos in now taken (a.k.a being used)
   
   //printf("Exiting HT_OpenIndex\n");
 
@@ -75,6 +83,10 @@ HT_ErrorCode HT_CloseFile(int indexDesc) {
   //printf("Entering HT_CloseFile\n");
   
   int fd = indexArray[indexDesc].fd;
+  
+  indexArray[indexDesc].used=0;  //We have to "delete" the file from indexArray.We will just assume that this position can be reused
+  indexArray[indexDesc].fd = -1; // -1 means that there is no file in position indexDesc
+  
   CALL_BF(BF_CloseFile(fd));
   
   //printf("Exiting HT_CloseFile\n");
@@ -92,7 +104,14 @@ HT_ErrorCode HT_InsertEntry(int indexDesc, Record record) {
   //printf("Entering HT_InsertEntry\n");
   
   printRecord(record);
-  int fd = indexArray[indexDesc].fd;
+  
+  if(indexArray[indexDesc].used == 0){
+    printf("Trying to access a closed file!\n");  // We can't/shouldn't insert into a closed file
+    return HT_ERROR;    
+  }
+  
+  int fd =indexArray[indexDesc].fd;
+
 
   BF_Block *block;
   BF_Block_Init(&block);
@@ -112,6 +131,12 @@ HT_ErrorCode HT_InsertEntry(int indexDesc, Record record) {
 HT_ErrorCode HT_PrintAllEntries(int indexDesc, int *id) {
   //insert code here
   //printf("Entering HT_PrintAllEntries\n");
+  
+  if(indexArray[indexDesc].used == 0){
+    printf("Can't print from a closed file! Please open the file first\n");
+    return HT_ERROR;
+  }
+
   BF_Block *block;
   BF_Block_Init(&block);
   
