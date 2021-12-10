@@ -114,7 +114,7 @@ int main() {
   HT_Init();
   HT_CreateIndex(filename, depth);
   HT_OpenIndex(filename, &fd);
-  //HT_InsertEntry(fd, record);
+  HT_InsertEntry(fd, record);
   HT_PrintAllEntries(fd, NULL);
   HT_CloseFile(fd);  
   
