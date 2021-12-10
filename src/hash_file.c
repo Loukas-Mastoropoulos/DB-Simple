@@ -16,11 +16,15 @@
 }
 
 typedef struct{
+  Record record;
+} Entry;
+
+typedef struct{
   int fd;
   int used;
-} indexNode;
+} IndexNode;
 
-indexNode indexArray[MAX_OPEN_FILES];
+IndexNode indexArray[MAX_OPEN_FILES];
 HT_ErrorCode HT_Init() {
   //insert code here
   //printf("This is HT_Init start\n");
@@ -90,8 +94,11 @@ void printRecord(Record record){
 HT_ErrorCode HT_InsertEntry(int indexDesc, Record record) {
   //insert code here
   //printf("Entering HT_InsertEntry\n");
+
+  Entry entry;
+  entry.record = record;
   
-  printRecord(record);
+  printRecord(entry.record);
   int fd = indexArray[indexDesc].fd;
 
   BF_Block *block;
@@ -99,7 +106,7 @@ HT_ErrorCode HT_InsertEntry(int indexDesc, Record record) {
 
   CALL_BF(BF_AllocateBlock(fd, block));
   char *data = BF_Block_GetData(block);
-  memcpy(data, &record, sizeof(Record));
+  memcpy(data, &entry, sizeof(Entry));
   BF_Block_SetDirty(block);
   CALL_BF(BF_UnpinBlock(block));
   BF_Block_Destroy(&block);
@@ -117,12 +124,12 @@ HT_ErrorCode HT_PrintAllEntries(int indexDesc, int *id) {
   
   int fd = indexArray[indexDesc].fd;
   int i = 0;
-  Record record;
+  Entry entry;
 
   CALL_BF(BF_GetBlock(fd, i, block));
   char *data = BF_Block_GetData(block);
-  memcpy(&record, data, sizeof(Record));
-  printRecord(record);
+  memcpy(&entry, data, sizeof(Record));
+  printRecord(entry.record);
   CALL_BF(BF_UnpinBlock(block));
   
   BF_Block_Destroy(&block);
