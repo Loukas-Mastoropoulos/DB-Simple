@@ -7,5 +7,5 @@ bf:
 	gcc -I ./include/ -L ./lib/ -Wl,-rpath,./lib/ ./examples/bf_main.c -lbf -o ./build/runner -O2
 
 clean:
-	@echo " Removing runner.exe and temp.db ..."
-	rm temp.db ./build/runner
+	@echo " Removing runner.exe and all .db files ..."
+	rm *.db ./build/runner
