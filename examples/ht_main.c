@@ -4,6 +4,7 @@
 #include <time.h>
 #include "bf.h"
 #include "hash_file.h"
+#include <unistd.h>
 
 #define RECORDS_NUM 1000 // you can change it if you want
 #define GLOBAL_DEPT 2 // you can change it if you want
@@ -103,27 +104,48 @@ int main() {
   int id;
   int depth = 3;
   const char* filename = "temp.db";
-  Record record;
+  Record record, record1, record2;
   
   record.id = 1;
   strcpy(record.city, cities[0]);
-  strcpy(record.name, names[1]);
-  strcpy(record.surname, surnames[1]);
+  strcpy(record.name, names[0]);
+  strcpy(record.surname, surnames[0]);
 
+  record1.id = 2;
+  strcpy(record1.city, cities[1]);
+  strcpy(record1.name, names[1]);
+  strcpy(record1.surname, surnames[1]);
+
+  record2.id = 3;
+  strcpy(record2.city, cities[2]);
+  strcpy(record2.name, names[2]);
+  strcpy(record2.surname, surnames[2]);
+  
+  int want = 2;
 
   HT_Init();
   HT_CreateIndex(filename, depth);
   HT_OpenIndex(filename, &id);
+  printf("\n");
+
   HT_InsertEntry(id, record);
+  HT_InsertEntry(id, record1);
+  HT_InsertEntry(id, record2); 
+  printf("\n");
+  
+  //HT_PrintAllEntries(id, &want);
   HT_PrintAllEntries(id, NULL);
   HT_CloseFile(id);
-  
+
+  /*
   // Trying to insert and print entries AFTER a file has closed.
   // We should encounter error outputs and messages 
   HT_InsertEntry(id, record);   // Ensuring that trying to insert into a closed file will fail
   HT_PrintAllEntries(id, NULL); // Ensuring that trying to print a closed file will fail
   //Also,trying to close an already closed file should fail
   HT_CloseFile(id);             //Ensuring that trying to close an already closed file will fail
+  */
+
 
   ////////////////////////////////////////////////////////////////////////////////////////////////
   printf("\n...end\n");
