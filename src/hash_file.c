@@ -16,7 +16,7 @@
 }
 
 typedef struct{
-  Record record[2];
+  Record record[3];
 } Entry;
 
 typedef struct{
@@ -31,26 +31,45 @@ IndexNode indexArray[MAX_OPEN_FILES];
 HT_ErrorCode HT_Init() {
 
   //printf("This is HT_Init start\n");
-  
   CALL_BF(BF_Init(LRU));
   for(int i = 0; i < MAX_OPEN_FILES; i++)indexArray[i].used = 0;
   size = 0;
   
   //printf("End of HT_Init\n");
   return HT_OK;
+
 }
 
 HT_ErrorCode HT_CreateIndex(const char *filename, int depth) {
-  //insert code here
+  
   printf("Name given : %s, max depth : %i\n", filename, depth);
   CALL_BF(BF_CreateFile(filename));
+
+  BF_Block *block;
+  BF_Block_Init(&block);
+
+  int id;
+  HT_OpenIndex(filename, &id);
+  int fd = indexArray[id].fd;
+
+  //create new block at end
+  CALL_BF(BF_AllocateBlock(fd, block));
+  char *data = BF_Block_GetData(block);
+  memcpy(data, &depth, sizeof(int));
+  BF_Block_SetDirty(block);
+  CALL_BF(BF_UnpinBlock(block));
+  BF_Block_Destroy(&block);
+  
   printf("file was not created before\n");
+
+  HT_CloseFile(id);
   
   return HT_OK;
+
 }
 
 HT_ErrorCode HT_OpenIndex(const char *fileName, int *indexDesc){
-  //insert code here
+  
   //printf("Entering HT_OpenIndex\n");
   
   int found = 0;
@@ -79,18 +98,19 @@ HT_ErrorCode HT_OpenIndex(const char *fileName, int *indexDesc){
   //printf("Exiting HT_OpenIndex\n");
 
   return HT_OK;
+
 }
 
 HT_ErrorCode HT_CloseFile(int indexDesc) {
-  //insert code here
-  //printf("Entering HT_CloseFile\n");
   
+  //printf("Entering HT_CloseFile\n");
   int fd = indexArray[indexDesc].fd;
   CALL_BF(BF_CloseFile(fd));
   
   //printf("Exiting HT_CloseFile\n");
 
   return HT_OK;
+
 }
 
 void printRecord(Record record){
@@ -99,11 +119,9 @@ void printRecord(Record record){
 }
 
 HT_ErrorCode HT_InsertEntry(int indexDesc, Record record) {
-  //insert code here
+  
   //printf("Entering HT_InsertEntry\n");
-
   Entry entry;
-  //entry.record[size] = record;
   printRecord(record);
   int fd = indexArray[indexDesc].fd;
 
@@ -135,26 +153,34 @@ HT_ErrorCode HT_InsertEntry(int indexDesc, Record record) {
   //printf("Exiting HT_InsertEntry\n");
 
   return HT_OK;
+
 }
 
 HT_ErrorCode HT_PrintAllEntries(int indexDesc, int *id) {
-  //insert code here
+  
   printf("Entering HT_PrintAllEntries\n");
   BF_Block *block;
   BF_Block_Init(&block);
   
   int fd = indexArray[indexDesc].fd;
-  int i = 0;
+  int i = 1;
   Entry entry;
 
   CALL_BF(BF_GetBlock(fd, i, block));
   char *data = BF_Block_GetData(block);
   memcpy(&entry, data, sizeof(Entry));
-  for(int i = 0; i < size; i++)printRecord(entry.record[i]);
+  
+  //print records with specific id
+  for(int i = 0; i < size; i++)
+    if(id == NULL)printRecord(entry.record[i]);   //if id not given, print all records
+    else
+      if(entry.record[i].id == (*id))printRecord(entry.record[i]);
+
   CALL_BF(BF_UnpinBlock(block));
   
   BF_Block_Destroy(&block);
   //printf("Exiting HT_PrintAllEntries\n");
 
   return HT_OK;
+
 }

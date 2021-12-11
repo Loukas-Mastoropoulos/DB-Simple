@@ -104,7 +104,7 @@ int main() {
   int id;
   int depth = 3;
   const char* filename = "temp.db";
-  Record record, record2;
+  Record record, record2, record3;
   
   record.id = 1;
   strcpy(record.city, cities[1]);
@@ -113,15 +113,23 @@ int main() {
 
   record2.id = 2;
   strcpy(record2.city, cities[0]);
-  strcpy(record2.name, names[1]);
-  strcpy(record2.surname, surnames[1]);
+  strcpy(record2.name, names[0]);
+  strcpy(record2.surname, surnames[0]);
 
+  record3.id = 3;
+  strcpy(record3.city, cities[3]);
+  strcpy(record3.name, names[3]);
+  strcpy(record3.surname, surnames[3]);
+
+
+  int want = 2;
   HT_Init();
   HT_CreateIndex(filename, depth);
   HT_OpenIndex(filename, &id);
   HT_InsertEntry(id, record);
   HT_InsertEntry(id, record2);
-  HT_PrintAllEntries(id, NULL);
+  HT_InsertEntry(id, record3); 
+  HT_PrintAllEntries(id, &want);
   HT_CloseFile(id);  
 
 

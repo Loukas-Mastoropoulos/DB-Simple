@@ -13,13 +13,13 @@ Task                                Working         Done        Comments
 
 Υλοποίση hashStatistics
 
-Στην printAllEntries εκτύπωση          X 
+Στην printAllEntries εκτύπωση                          X 
 εγγραφών με συγκεκριμένο id
 
-αποθήκευση gloab depth στο 1ο 
+αποθήκευση gloab depth στο 1ο                          X 
 μπλοκ του αρχείου
 
-δημιουργία hash function
+δημιουργία hash function               X
 
 δημιουργία δομών για τιμές hash 
 και δείκτες (block_num) σε δεδομένα    
