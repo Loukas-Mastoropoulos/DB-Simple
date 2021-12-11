@@ -17,7 +17,11 @@
 }
 
 typedef struct{
-  char header[24];
+  char desc[30];
+} DataHeader;
+
+typedef struct{
+  DataHeader header;
   Record record[3];
 } Entry;
 
@@ -159,7 +163,7 @@ HT_ErrorCode HT_InsertEntry(int indexDesc, Record record) {
   if(size == 0){
     //create new block at end
     CALL_BF(BF_AllocateBlock(fd, block));
-    strcpy(entry.header, "test header");
+    strcpy(entry.header.desc, "test header");
   }
   else{
     //get last block
@@ -199,7 +203,7 @@ HT_ErrorCode HT_PrintAllEntries(int indexDesc, int *id) {
   memcpy(&entry, data, sizeof(Entry));
   
   //print header info
-  printf("entry header is : %s\n", entry.header);
+  printf("entry header is : %s\n", entry.header.desc);
 
   //print records with specific id
   for(int i = 0; i < size; i++)
