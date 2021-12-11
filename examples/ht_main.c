@@ -132,6 +132,13 @@ int main() {
   HT_PrintAllEntries(id, &want);
   HT_CloseFile(id);  
 
+  /*
+  // Trying to insert and print entries AFTER a file has closed.
+  // We should encounter error outputs and messages 
+  HT_InsertEntry(id, record);   // Ensuring that trying to insert into a closed file will fail
+  HT_PrintAllEntries(id, NULL); // Ensuring that trying to print a closed file will fail
+  */
+
 
   ////////////////////////////////////////////////////////////////////////////////////////////////
   printf("\n...end\n");
