@@ -24,5 +24,5 @@ Task                                Working         Done        Comments
 δημιουργία δομών για τιμές hash 
 και δείκτες (block_num) σε δεδομένα                    X
 
-σύνδεση δεικτών (block_num) και 
+σύνδεση δεικτών (block_num) και           X
 δεδομένων
