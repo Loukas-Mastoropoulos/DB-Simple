@@ -82,6 +82,11 @@ HT_ErrorCode HT_CloseFile(int indexDesc) {
   //insert code here
   //printf("Entering HT_CloseFile\n");
   
+  if(indexArray[indexDesc].used == 0){
+    printf("Can't close an already closed file!\n");
+    return HT_ERROR;
+  }
+
   int fd = indexArray[indexDesc].fd;
   
   indexArray[indexDesc].used=0;  //We have to "delete" the file from indexArray.We will just assume that this position can be reused

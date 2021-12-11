@@ -122,6 +122,8 @@ int main() {
   // We should encounter error outputs and messages 
   HT_InsertEntry(id, record);   // Ensuring that trying to insert into a closed file will fail
   HT_PrintAllEntries(id, NULL); // Ensuring that trying to print a closed file will fail
+  //Also,trying to close an already closed file should fail
+  HT_CloseFile(id);             //Ensuring that trying to close an already closed file will fail
 
   ////////////////////////////////////////////////////////////////////////////////////////////////
   printf("\n...end\n");
