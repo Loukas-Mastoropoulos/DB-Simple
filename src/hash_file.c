@@ -18,6 +18,7 @@
 
 typedef struct{
   char desc[30];
+  int size;
 } DataHeader;
 
 typedef struct{
@@ -31,7 +32,6 @@ typedef struct{
 } IndexNode;
 
 int dataN;
-static int size;
 
 IndexNode indexArray[MAX_OPEN_FILES];
 HT_ErrorCode HT_Init() {
@@ -45,7 +45,6 @@ HT_ErrorCode HT_Init() {
 
   CALL_BF(BF_Init(LRU));
   for(int i = 0; i < MAX_OPEN_FILES; i++)indexArray[i].used = 0;
-  size = 0;
   
   //printf("End of HT_Init\n");
   return HT_OK;
@@ -159,29 +158,34 @@ HT_ErrorCode HT_InsertEntry(int indexDesc, Record record) {
   BF_Block *block;
   BF_Block_Init(&block);
   int blockN;
+  int new = 0;  //1 if we create new entry, 0 if we add to existing one
+  BF_GetBlockCounter(fd, &blockN);
 
-  if(size == 0){
+  if(blockN == 1){  //if there was no entry added to file before
+    
     //create new block at end
     CALL_BF(BF_AllocateBlock(fd, block));
-    strcpy(entry.header.desc, "test header");
+    strcpy(entry.header.desc, "test header");   //dummy header description
+    entry.header.size = 0;
+    new = 1;    //note that we have a new entry
+
   }
   else{
-    //get last block
-    BF_GetBlockCounter(fd, &blockN);
+
+    //if we don't need to create new entry get last block
     blockN = blockN - 1;
     CALL_BF(BF_GetBlock(fd, blockN, block));
   }
 
   char *data = BF_Block_GetData(block);
-  if(size != 0)memcpy(&entry, data, sizeof(Entry)); //get previous data
-  entry.record[size] = record;  //add record
+  if(new == 0)memcpy(&entry, data, sizeof(Entry)); //get previous data, if we're adding to old entry
+  entry.record[entry.header.size] = record;  //add record
+  (entry.header.size) ++;
  
   memcpy(data, &entry, sizeof(Entry));
   BF_Block_SetDirty(block);
   CALL_BF(BF_UnpinBlock(block));
   BF_Block_Destroy(&block);
-
-  size++; //increase size of file
   //printf("Exiting HT_InsertEntry\n");
 
   return HT_OK;
@@ -195,7 +199,7 @@ HT_ErrorCode HT_PrintAllEntries(int indexDesc, int *id) {
   BF_Block_Init(&block);
   
   int fd = indexArray[indexDesc].fd;
-  int i = 1;
+  int i = 1;    //get 2nd block, 1st has info about file
   Entry entry;
 
   CALL_BF(BF_GetBlock(fd, i, block));
@@ -206,7 +210,7 @@ HT_ErrorCode HT_PrintAllEntries(int indexDesc, int *id) {
   printf("entry header is : %s\n", entry.header.desc);
 
   //print records with specific id
-  for(int i = 0; i < size; i++)
+  for(int i = 0; i < entry.header.size; i++)
     if(id == NULL)printRecord(entry.record[i]);   //if id not given, print all records
     else
       if(entry.record[i].id == (*id))printRecord(entry.record[i]);

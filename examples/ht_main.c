@@ -127,10 +127,13 @@ int main() {
   HT_Init();
   HT_CreateIndex(filename, depth);
   HT_OpenIndex(filename, &id);
+  printf("\n");
   HT_InsertEntry(id, record);
   HT_InsertEntry(id, record2);
   HT_InsertEntry(id, record3); 
+  printf("\n");
   HT_PrintAllEntries(id, &want);
+  //HT_PrintAllEntries(id, NULL);
   HT_CloseFile(id);  
 
   /*
