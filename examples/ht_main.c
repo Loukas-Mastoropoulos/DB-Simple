@@ -104,37 +104,38 @@ int main() {
   int id;
   int depth = 3;
   const char* filename = "temp.db";
-  Record record, record2, record3;
+  Record record, record1, record2;
   
   record.id = 1;
-  strcpy(record.city, cities[1]);
-  strcpy(record.name, names[1]);
-  strcpy(record.surname, surnames[1]);
+  strcpy(record.city, cities[0]);
+  strcpy(record.name, names[0]);
+  strcpy(record.surname, surnames[0]);
 
-  record2.id = 2;
-  strcpy(record2.city, cities[0]);
-  strcpy(record2.name, names[0]);
-  strcpy(record2.surname, surnames[0]);
+  record1.id = 2;
+  strcpy(record1.city, cities[1]);
+  strcpy(record1.name, names[1]);
+  strcpy(record1.surname, surnames[1]);
 
-  record3.id = 3;
-  strcpy(record3.city, cities[3]);
-  strcpy(record3.name, names[3]);
-  strcpy(record3.surname, surnames[3]);
-
-
+  record2.id = 3;
+  strcpy(record2.city, cities[2]);
+  strcpy(record2.name, names[2]);
+  strcpy(record2.surname, surnames[2]);
+  
   int want = 2;
-  printf("id (%i) has hashValue = %i\n", 15, hashFunction(15));
+
   HT_Init();
   HT_CreateIndex(filename, depth);
   HT_OpenIndex(filename, &id);
   printf("\n");
+
   HT_InsertEntry(id, record);
-  HT_InsertEntry(id, record2);
-  HT_InsertEntry(id, record3); 
+  HT_InsertEntry(id, record1);
+  HT_InsertEntry(id, record2); 
   printf("\n");
-  HT_PrintAllEntries(id, &want);
-  //HT_PrintAllEntries(id, NULL);
-  HT_CloseFile(id);  
+  
+  //HT_PrintAllEntries(id, &want);
+  HT_PrintAllEntries(id, NULL);
+  HT_CloseFile(id);
 
   /*
   // Trying to insert and print entries AFTER a file has closed.

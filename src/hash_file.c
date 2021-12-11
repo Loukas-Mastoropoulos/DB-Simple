@@ -31,6 +31,11 @@ typedef struct{
   int used;
 } IndexNode;
 
+typedef struct{
+  int value;
+  int block_num;
+} HashNode;
+
 int dataN;
 
 IndexNode indexArray[MAX_OPEN_FILES];
@@ -62,13 +67,27 @@ HT_ErrorCode HT_CreateIndex(const char *filename, int depth) {
   int id;
   HT_OpenIndex(filename, &id);
   int fd = indexArray[id].fd;
+  HashNode hashNode[2];
+  hashNode[0].value = 0;
+  hashNode[0].block_num = 2;
+  hashNode[1].value = 1;
+  hashNode[1].block_num = 3;
+  
 
-  //create new block at end
+  //create first block for info
   CALL_BF(BF_AllocateBlock(fd, block));
   char *data = BF_Block_GetData(block);
   memcpy(data, &depth, sizeof(int));
   BF_Block_SetDirty(block);
   CALL_BF(BF_UnpinBlock(block));
+
+  //create second block for hashing
+  CALL_BF(BF_AllocateBlock(fd, block));
+  data = BF_Block_GetData(block);
+  memcpy(data, hashNode, 2*sizeof(hashNode));
+  BF_Block_SetDirty(block);
+  CALL_BF(BF_UnpinBlock(block));
+
   BF_Block_Destroy(&block);
   
   printf("file was not created before\n");
@@ -161,7 +180,7 @@ HT_ErrorCode HT_InsertEntry(int indexDesc, Record record) {
   int new = 0;  //1 if we create new entry, 0 if we add to existing one
   BF_GetBlockCounter(fd, &blockN);
 
-  if(blockN == 1){  //if there was no entry added to file before
+  if(blockN == 2){  //if there was no entry added to file before
     
     //create new block at end
     CALL_BF(BF_AllocateBlock(fd, block));
@@ -199,7 +218,7 @@ HT_ErrorCode HT_PrintAllEntries(int indexDesc, int *id) {
   BF_Block_Init(&block);
   
   int fd = indexArray[indexDesc].fd;
-  int i = 1;    //get 2nd block, 1st has info about file
+  int i = 2;    //get 2nd block, 1st has info about file
   Entry entry;
 
   CALL_BF(BF_GetBlock(fd, i, block));

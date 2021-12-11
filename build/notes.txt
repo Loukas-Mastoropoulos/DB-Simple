@@ -22,7 +22,7 @@ Task                                Working         Done        Comments
 δημιουργία hash function                               X        μόνο mod με 2^depth για τώρα
 
 δημιουργία δομών για τιμές hash 
-και δείκτες (block_num) σε δεδομένα    
+και δείκτες (block_num) σε δεδομένα                    X
 
 σύνδεση δεικτών (block_num) και 
 δεδομένων
