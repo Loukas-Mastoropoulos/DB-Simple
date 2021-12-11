@@ -5,7 +5,7 @@ Task                                Working         Done        Comments
 
 Δημιουργία πίνακα indexArray                           X
 
-Χρήση κεφαλίδων (ίσως σαν μέλος        X
+Χρήση κεφαλίδων (ίσως σαν μέλος                        X
 σε δομές)
 
 Δημιουργία hashStatistics                              Χ

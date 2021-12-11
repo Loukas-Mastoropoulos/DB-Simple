@@ -16,6 +16,7 @@
 }
 
 typedef struct{
+  char header[24];
   Record record[3];
 } Entry;
 
@@ -151,6 +152,7 @@ HT_ErrorCode HT_InsertEntry(int indexDesc, Record record) {
   if(size == 0){
     //create new block at end
     CALL_BF(BF_AllocateBlock(fd, block));
+    strcpy(entry.header, "test header");
   }
   else{
     //get last block
@@ -189,6 +191,9 @@ HT_ErrorCode HT_PrintAllEntries(int indexDesc, int *id) {
   char *data = BF_Block_GetData(block);
   memcpy(&entry, data, sizeof(Entry));
   
+  //print header info
+  printf("entry header is : %s\n", entry.header);
+
   //print records with specific id
   for(int i = 0; i < size; i++)
     if(id == NULL)printRecord(entry.record[i]);   //if id not given, print all records
