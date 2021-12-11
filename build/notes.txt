@@ -11,7 +11,7 @@ Task                                Working         Done        Comments
 Δημιουργία hashStatistics                              Χ
 στο header file
 
-Υλοποίση hashStatistics
+Υλοποίση hashStatistics                   X
 
 Στην printAllEntries εκτύπωση                          X 
 εγγραφών με συγκεκριμένο id
