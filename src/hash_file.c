@@ -36,7 +36,8 @@ typedef struct{
   int block_num;
 } HashNode;
 
-int dataN;
+int max_entries;
+int max_hNodes;
 
 IndexNode indexArray[MAX_OPEN_FILES];
 HT_ErrorCode HT_Init() {
@@ -50,7 +51,10 @@ HT_ErrorCode HT_Init() {
 
   CALL_BF(BF_Init(LRU));
   for(int i = 0; i < MAX_OPEN_FILES; i++)indexArray[i].used = 0;
-  
+
+  int max_entries = BF_BLOCK_SIZE/sizeof(Entry);
+  int max_hNodes = BF_BLOCK_SIZE/sizeof(HashNode);
+
   //printf("End of HT_Init\n");
   return HT_OK;
 
@@ -84,7 +88,7 @@ HT_ErrorCode HT_CreateIndex(const char *filename, int depth) {
   //create second block for hashing
   CALL_BF(BF_AllocateBlock(fd, block));
   data = BF_Block_GetData(block);
-  memcpy(data, hashNode, 2*sizeof(hashNode));
+  memcpy(data, hashNode, 2*sizeof(HashNode));
   BF_Block_SetDirty(block);
   CALL_BF(BF_UnpinBlock(block));
 
