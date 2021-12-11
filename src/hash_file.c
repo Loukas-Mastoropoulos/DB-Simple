@@ -154,6 +154,10 @@ void printRecord(Record record){
           record.id, record.city, record.name, record.surname);
 }
 
+void printHashNode(HashNode node){
+  printf("HashNode with value : %i, and block_num : %i\n", node.value, node.block_num);
+}
+
 int hashFunction(int id){
   int depth = 2;
   int number_of_values = pow(2.0, (double)depth);
@@ -172,7 +176,6 @@ HT_ErrorCode HT_InsertEntry(int indexDesc, Record record) {
   }
   
   int fd =indexArray[indexDesc].fd;
-
 
   BF_Block *block;
   BF_Block_Init(&block);
@@ -220,6 +223,19 @@ HT_ErrorCode HT_PrintAllEntries(int indexDesc, int *id) {
   int fd = indexArray[indexDesc].fd;
   int i = 2;    //get 2nd block, 1st has info about file
   Entry entry;
+  // HashNode hashNode[2];
+
+  //Testing 2nd block (block with hash codes)
+  /*
+  CALL_BF(BF_GetBlock(fd, 1, block));
+  char *data = BF_Block_GetData(block);
+  memcpy(hashNode, data, 2*sizeof(HashNode));
+
+  printHashNode(hashNode[0]);
+  printHashNode(hashNode[1]);
+  */
+  ///////////////////////////////////////////
+
 
   CALL_BF(BF_GetBlock(fd, i, block));
   char *data = BF_Block_GetData(block);
