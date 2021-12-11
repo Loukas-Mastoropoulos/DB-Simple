@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 
 #include "bf.h"
 #include "hash_file.h"
@@ -129,6 +130,12 @@ HT_ErrorCode HT_CloseFile(int indexDesc) {
 void printRecord(Record record){
   printf("Entry with id : %i, city : %s, name : %s, and surname : %s\n", 
           record.id, record.city, record.name, record.surname);
+}
+
+int hashFunction(int id){
+  int depth = 2;
+  int number_of_values = pow(2.0, (double)depth);
+  return id % number_of_values;
 }
 
 HT_ErrorCode HT_InsertEntry(int indexDesc, Record record) {

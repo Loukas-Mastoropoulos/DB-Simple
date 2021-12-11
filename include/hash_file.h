@@ -80,6 +80,8 @@ HT_ErrorCode HashStatistics(
 	);
 
 
-void printRecord(Record);
+void printRecord(Record);	//for testing
+int hashFunction(int);		//for testing
+
 
 #endif // HASH_FILE_H

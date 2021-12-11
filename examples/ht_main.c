@@ -123,6 +123,7 @@ int main() {
 
 
   int want = 2;
+  printf("id (%i) has hashValue = %i\n", 15, hashFunction(15));
   HT_Init();
   HT_CreateIndex(filename, depth);
   HT_OpenIndex(filename, &id);
