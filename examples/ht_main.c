@@ -4,6 +4,7 @@
 #include <time.h>
 #include "bf.h"
 #include "hash_file.h"
+#include <unistd.h>
 
 #define RECORDS_NUM 1000 // you can change it if you want
 #define GLOBAL_DEPT 2 // you can change it if you want
@@ -103,18 +104,23 @@ int main() {
   int id;
   int depth = 3;
   const char* filename = "temp.db";
-  Record record;
+  Record record, record2;
   
   record.id = 1;
   strcpy(record.city, cities[1]);
   strcpy(record.name, names[1]);
   strcpy(record.surname, surnames[1]);
 
+  record2.id = 2;
+  strcpy(record2.city, cities[0]);
+  strcpy(record2.name, names[1]);
+  strcpy(record2.surname, surnames[1]);
 
   HT_Init();
   HT_CreateIndex(filename, depth);
   HT_OpenIndex(filename, &id);
   HT_InsertEntry(id, record);
+  HT_InsertEntry(id, record2);
   HT_PrintAllEntries(id, NULL);
   HT_CloseFile(id);  
 

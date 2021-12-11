@@ -86,4 +86,7 @@ HT_ErrorCode HashStatistics(
 *
 **/
 
+
+void printRecord(Record);
+
 #endif // HASH_FILE_H

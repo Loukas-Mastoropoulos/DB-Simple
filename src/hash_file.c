@@ -16,7 +16,7 @@
 }
 
 typedef struct{
-  Record record;
+  Record record[2];
 } Entry;
 
 typedef struct{
@@ -24,12 +24,18 @@ typedef struct{
   int used;
 } IndexNode;
 
+int dataN;
+static int size;
+
 IndexNode indexArray[MAX_OPEN_FILES];
 HT_ErrorCode HT_Init() {
-  //insert code here
+
   //printf("This is HT_Init start\n");
+  
   CALL_BF(BF_Init(LRU));
   for(int i = 0; i < MAX_OPEN_FILES; i++)indexArray[i].used = 0;
+  size = 0;
+  
   //printf("End of HT_Init\n");
   return HT_OK;
 }
@@ -61,6 +67,7 @@ HT_ErrorCode HT_OpenIndex(const char *fileName, int *indexDesc){
     }
 
   }
+
   //if table is full return error
   if(found == 0)return HT_ERROR;
 
@@ -96,21 +103,35 @@ HT_ErrorCode HT_InsertEntry(int indexDesc, Record record) {
   //printf("Entering HT_InsertEntry\n");
 
   Entry entry;
-  entry.record = record;
-  
-  printRecord(entry.record);
+  //entry.record[size] = record;
+  printRecord(record);
   int fd = indexArray[indexDesc].fd;
 
   BF_Block *block;
   BF_Block_Init(&block);
+  int blockN;
 
-  CALL_BF(BF_AllocateBlock(fd, block));
+  if(size == 0){
+    //create new block at end
+    CALL_BF(BF_AllocateBlock(fd, block));
+  }
+  else{
+    //get last block
+    BF_GetBlockCounter(fd, &blockN);
+    blockN = blockN - 1;
+    CALL_BF(BF_GetBlock(fd, blockN, block));
+  }
+
   char *data = BF_Block_GetData(block);
+  if(size != 0)memcpy(&entry, data, sizeof(Entry)); //get previous data
+  entry.record[size] = record;  //add record
+ 
   memcpy(data, &entry, sizeof(Entry));
   BF_Block_SetDirty(block);
   CALL_BF(BF_UnpinBlock(block));
   BF_Block_Destroy(&block);
 
+  size++; //increase size of file
   //printf("Exiting HT_InsertEntry\n");
 
   return HT_OK;
@@ -118,7 +139,7 @@ HT_ErrorCode HT_InsertEntry(int indexDesc, Record record) {
 
 HT_ErrorCode HT_PrintAllEntries(int indexDesc, int *id) {
   //insert code here
-  //printf("Entering HT_PrintAllEntries\n");
+  printf("Entering HT_PrintAllEntries\n");
   BF_Block *block;
   BF_Block_Init(&block);
   
@@ -128,8 +149,8 @@ HT_ErrorCode HT_PrintAllEntries(int indexDesc, int *id) {
 
   CALL_BF(BF_GetBlock(fd, i, block));
   char *data = BF_Block_GetData(block);
-  memcpy(&entry, data, sizeof(Record));
-  printRecord(entry.record);
+  memcpy(&entry, data, sizeof(Entry));
+  for(int i = 0; i < size; i++)printRecord(entry.record[i]);
   CALL_BF(BF_UnpinBlock(block));
   
   BF_Block_Destroy(&block);
