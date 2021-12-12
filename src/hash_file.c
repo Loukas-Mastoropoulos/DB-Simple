@@ -221,9 +221,12 @@ HT_ErrorCode HT_InsertEntry(int indexDesc, Record record)
   data = BF_Block_GetData(block);
   memcpy(&hashEntry, data, sizeof(HashEntry));
 
+  //number of hashNodes
+  int hashN = pow(2.0, (double) depth);
+
   //find bucket
   int pos;
-  for(pos = 0; pos < 2; pos++)if(hashEntry.hashNode[pos].value == value)break;
+  for(pos = 0; pos < hashN; pos++)if(hashEntry.hashNode[pos].value == value)break;
 
   //Check for allocated space
 
@@ -280,9 +283,20 @@ HT_ErrorCode HT_PrintAllEntries(int indexDesc, int *id)
   Entry entry;
   HashEntry hashEntry;  
 
+  //get depth
+  int depth;
+
+  CALL_BF(BF_GetBlock(fd, 0, block));
+  char *data = BF_Block_GetData(block);
+  memcpy(&depth, data, sizeof(int));
+  CALL_BF(BF_UnpinBlock(block));
+
+  //number of hash values
+  int hashN = pow(2.0, (double) depth);
+
   //get hashNodes
   CALL_BF(BF_GetBlock(fd, 1, block));
-  char *data = BF_Block_GetData(block);
+  data = BF_Block_GetData(block);
   memcpy(&hashEntry, data, sizeof(HashEntry));
   CALL_BF(BF_UnpinBlock(block));
 
@@ -290,7 +304,7 @@ HT_ErrorCode HT_PrintAllEntries(int indexDesc, int *id)
   if(id == NULL){
 
     //for every hash value
-    for(int i = 0; i < 2; i++){
+    for(int i = 0; i < hashEntry.header.size; i++){
 
       //get data block
       blockN = hashEntry.hashNode[i].block_num;
@@ -312,20 +326,12 @@ HT_ErrorCode HT_PrintAllEntries(int indexDesc, int *id)
 
   }
 
-  //get depth
-  int depth;
-
-  CALL_BF(BF_GetBlock(fd, 0, block));
-  char *data = BF_Block_GetData(block);
-  memcpy(&depth, data, sizeof(int));
-  CALL_BF(BF_UnpinBlock(block));
-
   //id != NULL. Print specific entry
   int value = hashFunction((*id), depth);
 
   //find data block_num
   int pos;
-  for(pos = 0; pos < 2; pos++)if(hashEntry.hashNode[pos].value == value)break;
+  for(pos = 0; pos < hashN; pos++)if(hashEntry.hashNode[pos].value == value)break;
   blockN = hashEntry.hashNode[pos].block_num;
 
   if(blockN == 0){
