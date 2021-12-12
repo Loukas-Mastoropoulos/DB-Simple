@@ -68,26 +68,27 @@ void printHashNode(HashNode node)
   printf("HashNode with value : %i, and block_num : %i\n", node.value, node.block_num);
 }
 
-int hashFunction(int id, int depth)
+uint hashFunction(int id, int depth)
 {
   //id = id * 123456;
 
-  int a;  //3-5
-  a = id >> 3;
-  a = a & 7;
+  uint a; 
+  a = id << (32 - depth);
+  a = a >> (32 - depth);
   
-  int b;  //8-9
-  b = id >> 8;
-  b = b & 3;
+  // int b;  //8-9
+  // b = id >> 8;
+  // b = b & 3;
   
-  int c;  //12-14
-  c = id >> 12;
-  c = c & 7;
+  // int c;  //12-14
+  // c = id >> 12;
+  // c = c & 7;
 
-  int cba = (c << 5) | (b << 3) | a;
+  // int cba = (c << 5) | (b << 3) | a;
 
-  int number_of_values = pow(2.0, (double)depth);
-  return id % number_of_values;
+  // int number_of_values = pow(2.0, (double)depth);
+  printf("return value is %i\n",a);
+  return a;
 }
 
 
