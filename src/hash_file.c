@@ -19,10 +19,10 @@
 
 typedef struct
 {
-  int size;
+  int size; // αριθμός εγγραφών στο μπλοκ δεδομένων
 } DataHeader;
 
-typedef struct 
+typedef struct
 {
   char desc[30];
 } HashHeader;
@@ -31,19 +31,19 @@ typedef struct
 {
   DataHeader header;
   Record record[(BF_BLOCK_SIZE - sizeof(DataHeader)) / sizeof(Record)];
-} Entry;
+} Entry; // hash bucket
 
 typedef struct
 {
   int value;
   int block_num;
-} HashNode;
+} HashNode; // τιμή κατακερματισμού και δείκτης σε block
 
 typedef struct
 {
   HashHeader header;
   HashNode hashNode[2];
-} HashEntry;
+} HashEntry; // τι χωράει σε ένα μπλοκ κατακερματισμού
 
 typedef struct
 {
@@ -70,7 +70,7 @@ HT_ErrorCode HT_Init()
 
   int max_records = (BF_BLOCK_SIZE - sizeof(DataHeader)) / sizeof(Record);
   int max_hNodes = BF_BLOCK_SIZE / sizeof(HashNode);
-  
+
   return HT_OK;
 }
 
@@ -86,7 +86,7 @@ HT_ErrorCode HT_CreateIndex(const char *filename, int depth)
   int id;
   HT_OpenIndex(filename, &id);
   int fd = indexArray[id].fd;
-  
+
   HashEntry hashEntry;
   strcpy(hashEntry.header.desc, "dummy description");
   hashEntry.hashNode[0].value = 0;
@@ -118,8 +118,8 @@ HT_ErrorCode HT_CreateIndex(const char *filename, int depth)
 
 HT_ErrorCode HT_OpenIndex(const char *fileName, int *indexDesc)
 {
-  
-  int found = 0;  //bool flag.
+
+  int found = 0; // bool flag.
 
   // find empty spot
   for (int i = 0; i < MAX_OPEN_FILES; i++)
@@ -131,7 +131,8 @@ HT_ErrorCode HT_OpenIndex(const char *fileName, int *indexDesc)
     }
 
   // if table is full return error
-  if (found == 0)return HT_ERROR;
+  if (found == 0)
+    return HT_ERROR;
 
   int fd;
   CALL_BF(BF_OpenFile(fileName, &fd));
@@ -186,7 +187,7 @@ HT_ErrorCode HT_InsertEntry(int indexDesc, Record record)
   Entry entry;
   printRecord(record);
 
-  //File is closed
+  // File is closed
   if (indexArray[indexDesc].used == 0)
   {
     printf("Trying to access a closed file!\n");
@@ -198,56 +199,60 @@ HT_ErrorCode HT_InsertEntry(int indexDesc, Record record)
   BF_Block *block;
   BF_Block_Init(&block);
   int blockN;
-  int new = 0; //bool flag. 1 if we create new block, else 0
+  int new = 0; // bool flag. 1 if we create new block, else 0
 
   BF_GetBlockCounter(fd, &blockN);
   int value = hashFunction(record.id);
 
   HashEntry hashEntry;
 
-  //get hashNodes
+  // get hashNodes
   CALL_BF(BF_GetBlock(fd, 1, block));
   char *data = BF_Block_GetData(block);
   memcpy(&hashEntry, data, sizeof(HashEntry));
 
-  //find bucket
+  // find bucket
   int pos;
-  for(pos = 0; pos < 2; pos++)if(hashEntry.hashNode[pos].value == value)break;
+  for (pos = 0; pos < 2; pos++)
+    if (hashEntry.hashNode[pos].value == value)
+      break;
 
-  //Check for allocated space
+  // Check for allocated space
 
-  if(hashEntry.hashNode[pos].block_num == 0){
-    //no space was allocated
+  if (hashEntry.hashNode[pos].block_num == 0)
+  {
+    // no space was allocated
 
-    //update hashNode values
+    // update hashNode values
     hashEntry.hashNode[pos].block_num = blockN;
     memcpy(data, &hashEntry, sizeof(HashEntry));
     BF_Block_SetDirty(block);
     CALL_BF(BF_UnpinBlock(block));
 
-    //allocate block at the end
+    // allocate block at the end
     CALL_BF(BF_AllocateBlock(fd, block));
-    //strcpy(entry.header.desc, "test header"); // dummy header description
+    // strcpy(entry.header.desc, "test header"); // dummy header description
     entry.header.size = 0;
-    
-    new = 1;   
 
-  }else{
-    //space has been previously allocated
-    
-    blockN = hashEntry.hashNode[pos].block_num; //get pointer to data block
+    new = 1;
+  }
+  else
+  {
+    // space has been previously allocated
+
+    blockN = hashEntry.hashNode[pos].block_num; // get pointer to data block
     CALL_BF(BF_UnpinBlock(block));
 
     CALL_BF(BF_GetBlock(fd, blockN, block));
-
   }
 
-  //write new info
+  // write new info
   data = BF_Block_GetData(block);
-  if(new == 0)memcpy(&entry, data, sizeof(Entry));  //if space was previously allocated, get previous data
-  entry.record[entry.header.size] = record;         //add record
-  (entry.header.size) ++;                           //update header size
- 
+  if (new == 0)
+    memcpy(&entry, data, sizeof(Entry));    // if space was previously allocated, get previous data
+  entry.record[entry.header.size] = record; // add record
+  (entry.header.size)++;                    // update header size
+
   memcpy(data, &entry, sizeof(Entry));
   BF_Block_SetDirty(block);
   CALL_BF(BF_UnpinBlock(block));
@@ -265,51 +270,53 @@ HT_ErrorCode HT_PrintAllEntries(int indexDesc, int *id)
 
   int fd = indexArray[indexDesc].fd;
   int blockN;
-  
-  Entry entry;
-  HashEntry hashEntry;  
 
-  //get hashNodes
+  Entry entry;
+  HashEntry hashEntry;
+
+  // get hashNodes
   CALL_BF(BF_GetBlock(fd, 1, block));
   char *data = BF_Block_GetData(block);
   memcpy(&hashEntry, data, sizeof(HashEntry));
   CALL_BF(BF_UnpinBlock(block));
 
-  //if id == NULL -> print all entries
-  if(id == NULL){
+  // if id == NULL -> print all entries
+  if (id == NULL)
+  {
 
-    //for every hash value
-    for(int i = 0; i < 2; i++){
+    // for every hash value
+    for (int i = 0; i < 2; i++)
+    {
 
-      //get data block
+      // get data block
       blockN = hashEntry.hashNode[i].block_num;
       CALL_BF(BF_GetBlock(fd, blockN, block));
       data = BF_Block_GetData(block);
       memcpy(&entry, data, sizeof(Entry));
 
-      //print all records
+      // print all records
       for (int i = 0; i < entry.header.size; i++)
         printRecord(entry.record[i]);
 
       CALL_BF(BF_UnpinBlock(block));
-
-
     }
-    
+
     BF_Block_Destroy(&block);
     return HT_OK;
-
   }
 
-  //id != NULL. Print specific entry
+  // id != NULL. Print specific entry
   int value = hashFunction((*id));
 
-  //find data block_num
+  // find data block_num
   int pos;
-  for(pos = 0; pos < 2; pos++)if(hashEntry.hashNode[pos].value == value)break;
+  for (pos = 0; pos < 2; pos++)
+    if (hashEntry.hashNode[pos].value == value)
+      break;
   blockN = hashEntry.hashNode[pos].block_num;
 
-  if(blockN == 0){
+  if (blockN == 0)
+  {
     printf("Data block was not allocated");
     return HT_ERROR;
   }
@@ -318,7 +325,7 @@ HT_ErrorCode HT_PrintAllEntries(int indexDesc, int *id)
   data = BF_Block_GetData(block);
   memcpy(&entry, data, sizeof(Entry));
 
-  //print record with that id
+  // print record with that id
   for (int i = 0; i < entry.header.size; i++)
     if (entry.record[i].id == (*id))
       printRecord(entry.record[i]);
