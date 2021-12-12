@@ -255,38 +255,71 @@ HT_ErrorCode HT_PrintAllEntries(int indexDesc, int *id)
   BF_Block *block;
   BF_Block_Init(&block);
 
+  
+
   int fd = indexArray[indexDesc].fd;
-  int i = 2;
+  int blockN;
+  
   Entry entry;
+  HashNode hashNode[2];  
 
-  // HashNode hashNode[2];
-
-  // Testing 2nd block (block with hash codes)
-  /*
+  //get hashNodes
   CALL_BF(BF_GetBlock(fd, 1, block));
   char *data = BF_Block_GetData(block);
   memcpy(hashNode, data, 2*sizeof(HashNode));
+  CALL_BF(BF_UnpinBlock(block));
 
-  printHashNode(hashNode[0]);
-  printHashNode(hashNode[1]);
-  */
-  ///////////////////////////////////////////
+  //if id == NULL -> print all entries
+  if(id == NULL){
 
-  CALL_BF(BF_GetBlock(fd, i, block));
-  char *data = BF_Block_GetData(block);
+    //for every hash value
+    for(int i = 0; i < 2; i++){
+
+      //get data block
+      blockN = hashNode[i].block_num;
+      CALL_BF(BF_GetBlock(fd, blockN, block));
+      data = BF_Block_GetData(block);
+      memcpy(&entry, data, sizeof(Entry));
+
+      //print all records
+      for (int i = 0; i < entry.header.size; i++)
+        printRecord(entry.record[i]);
+
+      CALL_BF(BF_UnpinBlock(block));
+
+
+    }
+    
+    BF_Block_Destroy(&block);
+    return HT_OK;
+
+  }
+
+  //id != NULL. Print specific entry
+  int value = hashFunction((*id));
+
+  //find data block_num
+  int pos;
+  for(pos = 0; pos < 2; pos++)if(hashNode[pos].value == value)break;
+  blockN = hashNode[pos].block_num;
+
+  if(blockN == 0){
+    printf("Data block was not allocated");
+    return HT_ERROR;
+  }
+
+  CALL_BF(BF_GetBlock(fd, blockN, block));
+  data = BF_Block_GetData(block);
   memcpy(&entry, data, sizeof(Entry));
-  
 
+  //print record with that id
   for (int i = 0; i < entry.header.size; i++)
-    if (id == NULL)
-      printRecord(entry.record[i]); // if id not given, print all records
-    else if (entry.record[i].id == (*id))
+    if (entry.record[i].id == (*id))
       printRecord(entry.record[i]);
 
   CALL_BF(BF_UnpinBlock(block));
 
   BF_Block_Destroy(&block);
-  // printf("Exiting HT_PrintAllEntries\n");
 
   return HT_OK;
 }

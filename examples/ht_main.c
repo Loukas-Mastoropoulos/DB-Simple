@@ -122,7 +122,7 @@ int main()
   int id;
   int depth = 1;
   const char *filename = "temp.db";
-  int want = 2;
+  int want = 3;
   ////////////////////////////////////////////////////////////////////////////////////////////////
 
   HT_Init();
@@ -135,8 +135,8 @@ int main()
   HT_InsertEntry(id, record2);
   
   printf("\n");
-  // HT_PrintAllEntries(id, &want);
-  HT_PrintAllEntries(id, NULL);
+  HT_PrintAllEntries(id, &want);
+  //HT_PrintAllEntries(id, NULL);
   
   HT_CloseFile(id);
 

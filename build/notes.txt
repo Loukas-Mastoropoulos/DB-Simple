@@ -27,7 +27,7 @@ Task                                Working         Done        Comments
 σύνδεση δεικτών (block_num) και                        X        για καινούργιο αρχείο, με 2 hash τιμές (δηλ. global depht = 1)
 δεδομένων
 
-printAllEntries να αξιοποιεί την
+printAllEntries να αξιοποιεί την                       X        λειτουργεί πάλι για καινούργιο αρχείο και θεωρεί gloabal depth = 1
 hashValue του id και με βάση αυτή
 να ψάχνει (όχι με fixed i)
 
