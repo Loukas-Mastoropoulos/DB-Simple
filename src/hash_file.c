@@ -24,7 +24,7 @@ typedef struct
 
 typedef struct
 {
-  char desc[30];
+  int size;
 } HashHeader;
 
 typedef struct
@@ -55,6 +55,24 @@ int max_entries;
 int max_hNodes;
 
 IndexNode indexArray[MAX_OPEN_FILES];
+
+void printRecord(Record record)
+{
+  printf("Entry with id : %i, city : %s, name : %s, and surname : %s\n",
+         record.id, record.city, record.name, record.surname);
+}
+
+void printHashNode(HashNode node)
+{
+  printf("HashNode with value : %i, and block_num : %i\n", node.value, node.block_num);
+}
+
+int hashFunction(int id, int depth)
+{
+  int number_of_values = pow(2.0, (double)depth);
+  return id % number_of_values;
+}
+
 HT_ErrorCode HT_Init()
 {
 
@@ -88,11 +106,24 @@ HT_ErrorCode HT_CreateIndex(const char *filename, int depth)
   int fd = indexArray[id].fd;
 
   HashEntry hashEntry;
-  strcpy(hashEntry.header.desc, "dummy description");
-  hashEntry.hashNode[0].value = 0;
-  hashEntry.hashNode[0].block_num = 0;
-  hashEntry.hashNode[1].value = 1;
-  hashEntry.hashNode[1].block_num = 0;
+  // strcpy(hashEntry.header.desc, "dummy description");
+  printf("Hash entry size is %li\n",(BF_BLOCK_SIZE - sizeof(HashHeader)) / sizeof(HashNode));
+  
+  hashEntry.header.size=pow(2.0,(double) depth);
+  printf("Hash header size is %i\n",hashEntry.header.size);
+  
+  for (int i =0;i< hashEntry.header.size;i++){
+      hashEntry.hashNode[i].value = i;
+      hashEntry.hashNode[i].block_num=0; 
+  }
+  for (int i =0;i< hashEntry.header.size;i++){
+    printHashNode(hashEntry.hashNode[i]);
+  }
+
+  // hashEntry.hashNode[0].value = 0;
+  // hashEntry.hashNode[0].block_num = 0;
+  // hashEntry.hashNode[1].value = 1;
+  // hashEntry.hashNode[1].block_num = 0;
 
   // create first block for info
   CALL_BF(BF_AllocateBlock(fd, block));
@@ -107,6 +138,7 @@ HT_ErrorCode HT_CreateIndex(const char *filename, int depth)
   memcpy(data, &hashEntry, sizeof(HashEntry));
   BF_Block_SetDirty(block);
   CALL_BF(BF_UnpinBlock(block));
+
 
   BF_Block_Destroy(&block);
   printf("file was not created before\n");
@@ -163,23 +195,8 @@ HT_ErrorCode HT_CloseFile(int indexDesc)
   return HT_OK;
 }
 
-void printRecord(Record record)
-{
-  printf("Entry with id : %i, city : %s, name : %s, and surname : %s\n",
-         record.id, record.city, record.name, record.surname);
-}
 
-void printHashNode(HashNode node)
-{
-  printf("HashNode with value : %i, and block_num : %i\n", node.value, node.block_num);
-}
 
-int hashFunction(int id)
-{
-  int depth = 1;
-  int number_of_values = pow(2.0, (double)depth);
-  return id % number_of_values;
-}
 
 HT_ErrorCode HT_InsertEntry(int indexDesc, Record record)
 {

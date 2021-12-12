@@ -145,7 +145,7 @@ int main()
   
 
   int id;
-  int depth = 1;
+  int depth = 3;
   const char *filename = "temp.db";
   int want = 3;
   ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -155,27 +155,27 @@ int main()
   
   HT_Init();
   HT_CreateIndex(filename, depth);
-  HT_OpenIndex(filename, &id);
+  // HT_OpenIndex(filename, &id);
   
-  printf("\n");
-  HT_InsertEntry(id, record);
-  HT_InsertEntry(id, record1);
-  HT_InsertEntry(id, record2);
-  HT_InsertEntry(id, r3);
-  HT_InsertEntry(id, r4);
-  HT_InsertEntry(id, r5);
-  HT_InsertEntry(id, r6);
-  HT_InsertEntry(id, r7);
+  // printf("\n");
+  // HT_InsertEntry(id, record);
+  // HT_InsertEntry(id, record1);
+  // HT_InsertEntry(id, record2);
+  // HT_InsertEntry(id, r3);
+  // HT_InsertEntry(id, r4);
+  // HT_InsertEntry(id, r5);
+  // HT_InsertEntry(id, r6);
+  // HT_InsertEntry(id, r7);
   
   
   
-  printf("\n");
-  HT_PrintAllEntries(id, &want);
+  // printf("\n");
+  // HT_PrintAllEntries(id, &want);
 
-  printf("\n");
-  HT_PrintAllEntries(id, NULL);
+  // printf("\n");
+  // HT_PrintAllEntries(id, NULL);
   
-  HT_CloseFile(id);
+  // HT_CloseFile(id);
 
   ////////////////////////////////////////////////////////////////////////////////////////////////
   char *test_name = "temp.db";
