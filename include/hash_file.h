@@ -78,7 +78,5 @@ HT_ErrorCode HashStatistics(
 	char *filename /* όνομα του αρχείου που ενδιαφέρει */
 );
 
-void printRecord(Record); // for testing
-int hashFunction(int);	  // for testing
 
 #endif // HASH_FILE_H
