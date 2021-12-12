@@ -42,7 +42,7 @@ typedef struct
 typedef struct
 {
   HashHeader header;
-  HashNode hashNode[2];
+  HashNode hashNode[(BF_BLOCK_SIZE - sizeof(HashHeader)) / sizeof(HashNode)];
 } HashEntry; // τι χωράει σε ένα μπλοκ κατακερματισμού
 
 typedef struct
