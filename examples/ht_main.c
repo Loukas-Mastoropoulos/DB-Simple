@@ -7,70 +7,69 @@
 #include <unistd.h>
 
 #define RECORDS_NUM 1000 // you can change it if you want
-#define GLOBAL_DEPT 2 // you can change it if you want
+#define GLOBAL_DEPT 2    // you can change it if you want
 #define FILE_NAME "data.db"
 
-const char* names[] = {
-  "Yannis",
-  "Christofos",
-  "Sofia",
-  "Marianna",
-  "Vagelis",
-  "Maria",
-  "Iosif",
-  "Dionisis",
-  "Konstantina",
-  "Theofilos",
-  "Giorgos",
-  "Dimitris"
-};
+const char *names[] = {
+    "Yannis",
+    "Christofos",
+    "Sofia",
+    "Marianna",
+    "Vagelis",
+    "Maria",
+    "Iosif",
+    "Dionisis",
+    "Konstantina",
+    "Theofilos",
+    "Giorgos",
+    "Dimitris"};
 
-const char* surnames[] = {
-  "Ioannidis",
-  "Svingos",
-  "Karvounari",
-  "Rezkalla",
-  "Nikolopoulos",
-  "Berreta",
-  "Koronis",
-  "Gaitanis",
-  "Oikonomou",
-  "Mailis",
-  "Michas",
-  "Halatsis"
-};
+const char *surnames[] = {
+    "Ioannidis",
+    "Svingos",
+    "Karvounari",
+    "Rezkalla",
+    "Nikolopoulos",
+    "Berreta",
+    "Koronis",
+    "Gaitanis",
+    "Oikonomou",
+    "Mailis",
+    "Michas",
+    "Halatsis"};
 
-const char* cities[] = {
-  "Athens",
-  "San Francisco",
-  "Los Angeles",
-  "Amsterdam",
-  "London",
-  "New York",
-  "Tokyo",
-  "Hong Kong",
-  "Munich",
-  "Miami"
-};
+const char *cities[] = {
+    "Athens",
+    "San Francisco",
+    "Los Angeles",
+    "Amsterdam",
+    "London",
+    "New York",
+    "Tokyo",
+    "Hong Kong",
+    "Munich",
+    "Miami"};
 
 #define CALL_OR_DIE(call)     \
   {                           \
     HT_ErrorCode code = call; \
-    if (code != HT_OK) {      \
+    if (code != HT_OK)        \
+    {                         \
       printf("Error\n");      \
       exit(code);             \
     }                         \
   }
 
-int main() {
+int main()
+{
   /*
   BF_Init(LRU);
-  
+
   CALL_OR_DIE(HT_Init());
 
   int indexDesc;
   CALL_OR_DIE(HT_CreateIndex(FILE_NAME, GLOBAL_DEPT));
-  CALL_OR_DIE(HT_OpenIndex(FILE_NAME, &indexDesc)); 
+  CALL_OR_DIE(HT_OpenIndex(FILE_NAME, &indexDesc));
 
   Record record;
   srand(12569874);
@@ -103,9 +102,9 @@ int main() {
   ////////////////////////////////////////////////////////////////////////////////////////////////
   int id;
   int depth = 3;
-  const char* filename = "temp.db";
+  const char *filename = "temp.db";
   Record record, record1, record2;
-  
+
   record.id = 1;
   strcpy(record.city, cities[0]);
   strcpy(record.name, names[0]);
@@ -120,7 +119,7 @@ int main() {
   strcpy(record2.city, cities[2]);
   strcpy(record2.name, names[2]);
   strcpy(record2.surname, surnames[2]);
-  
+
   int want = 2;
 
   HT_Init();
@@ -130,23 +129,25 @@ int main() {
 
   HT_InsertEntry(id, record);
   HT_InsertEntry(id, record1);
-  HT_InsertEntry(id, record2); 
+  HT_InsertEntry(id, record2);
   printf("\n");
-  
-  //HT_PrintAllEntries(id, &want);
+
+  // HT_PrintAllEntries(id, &want);
   HT_PrintAllEntries(id, NULL);
   HT_CloseFile(id);
 
   /*
   // Trying to insert and print entries AFTER a file has closed.
-  // We should encounter error outputs and messages 
+  // We should encounter error outputs and messages
   HT_InsertEntry(id, record);   // Ensuring that trying to insert into a closed file will fail
   HT_PrintAllEntries(id, NULL); // Ensuring that trying to print a closed file will fail
+  //Also,trying to close an already closed file should fail
+  HT_CloseFile(id);             //Ensuring that trying to close an already closed file will fail
   */
 
-
   ////////////////////////////////////////////////////////////////////////////////////////////////
+  char *test_name = "temp.db";
+  HashStatistics(test_name);
   printf("\n...end\n");
   return 0;
-
 }

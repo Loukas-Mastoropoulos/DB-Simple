@@ -7,57 +7,69 @@
 #include "hash_file.h"
 #define MAX_OPEN_FILES 20
 
-#define CALL_BF(call)       \
-{                           \
-  BF_ErrorCode code = call; \
-  if (code != BF_OK) {         \
-    BF_PrintError(code);    \
-    return HT_ERROR;        \
-  }                         \
-}
+#define CALL_BF(call)         \
+  {                           \
+    BF_ErrorCode code = call; \
+    if (code != BF_OK)        \
+    {                         \
+      BF_PrintError(code);    \
+      return HT_ERROR;        \
+    }                         \
+  }
 
-typedef struct{
+typedef struct
+{
   char desc[30];
   int size;
 } DataHeader;
 
-typedef struct{
+typedef struct
+{
   DataHeader header;
   Record record[3];
 } Entry;
 
-typedef struct{
+typedef struct
+{
   int fd;
   int used;
 } IndexNode;
 
-typedef struct{
+typedef struct
+{
   int value;
   int block_num;
 } HashNode;
 
-int dataN;
+int max_entries;
+int max_hNodes;
 
 IndexNode indexArray[MAX_OPEN_FILES];
-HT_ErrorCode HT_Init() {
+HT_ErrorCode HT_Init()
+{
 
-  //printf("This is HT_Init start\n");
+  // printf("This is HT_Init start\n");
 
-  if(MAX_OPEN_FILES == 0){
+  if (MAX_OPEN_FILES == 0)
+  {
     printf("Runner.exe needs at least one file to run.Please ensure that MAX_OPEN_FILES is not 0\n");
     return HT_ERROR;
   }
 
   CALL_BF(BF_Init(LRU));
-  for(int i = 0; i < MAX_OPEN_FILES; i++)indexArray[i].used = 0;
-  
-  //printf("End of HT_Init\n");
-  return HT_OK;
+  for (int i = 0; i < MAX_OPEN_FILES; i++)
+    indexArray[i].used = 0;
 
+  int max_entries = BF_BLOCK_SIZE / sizeof(Entry);
+  int max_hNodes = BF_BLOCK_SIZE / sizeof(HashNode);
+
+  // printf("End of HT_Init\n");
+  return HT_OK;
 }
 
-HT_ErrorCode HT_CreateIndex(const char *filename, int depth) {
-  
+HT_ErrorCode HT_CreateIndex(const char *filename, int depth)
+{
+
   printf("Name given : %s, max depth : %i\n", filename, depth);
   CALL_BF(BF_CreateFile(filename));
 
@@ -74,17 +86,17 @@ HT_ErrorCode HT_CreateIndex(const char *filename, int depth) {
   hashNode[1].block_num = 0;
   
 
-  //create first block for info
+  // create first block for info
   CALL_BF(BF_AllocateBlock(fd, block));
   char *data = BF_Block_GetData(block);
   memcpy(data, &depth, sizeof(int));
   BF_Block_SetDirty(block);
   CALL_BF(BF_UnpinBlock(block));
 
-  //create second block for hashing
+  // create second block for hashing
   CALL_BF(BF_AllocateBlock(fd, block));
   data = BF_Block_GetData(block);
-  memcpy(data, hashNode, 2*sizeof(hashNode));
+  memcpy(data, hashNode, 2 * sizeof(HashNode));
   BF_Block_SetDirty(block);
   CALL_BF(BF_UnpinBlock(block));
 
@@ -102,94 +114,105 @@ HT_ErrorCode HT_CreateIndex(const char *filename, int depth) {
   printf("file was not created before\n");
 
   HT_CloseFile(id);
-  
-  return HT_OK;
 
+  return HT_OK;
 }
 
-HT_ErrorCode HT_OpenIndex(const char *fileName, int *indexDesc){
-  
-  //printf("Entering HT_OpenIndex\n");
-  
-  int found = 0;
-  
-  //find empty spot
-  for(int i = 0; i < MAX_OPEN_FILES; i++){
+HT_ErrorCode HT_OpenIndex(const char *fileName, int *indexDesc)
+{
 
-    if(indexArray[i].used == 0){
+  // printf("Entering HT_OpenIndex\n");
+
+  int found = 0;
+
+  // find empty spot
+  for (int i = 0; i < MAX_OPEN_FILES; i++)
+  {
+
+    if (indexArray[i].used == 0)
+    {
 
       (*indexDesc) = i;
       found = 1;
       break;
-
     }
-
   }
 
-  //if table is full return error
-  if(found == 0)return HT_ERROR;
+  // if table is full return error
+  if (found == 0)
+    return HT_ERROR;
 
   int fd;
   CALL_BF(BF_OpenFile(fileName, &fd));
   int pos = (*indexDesc);
   indexArray[pos].fd = fd;
 
-  indexArray[pos].used = 1;  // Position pos in now taken (a.k.a being used)
-  
-  //printf("Exiting HT_OpenIndex\n");
+  indexArray[pos].used = 1; // Position pos in now taken (a.k.a being used)
+
+  // printf("Exiting HT_OpenIndex\n");
 
   return HT_OK;
-
 }
 
-HT_ErrorCode HT_CloseFile(int indexDesc) {
-  
-  //printf("Entering HT_CloseFile\n");
+HT_ErrorCode HT_CloseFile(int indexDesc)
+{
+
+  if (indexArray[indexDesc].used == 0)
+  {
+    printf("Can't close an already closed file!\n");
+    return HT_ERROR;
+  }
+
+  // printf("Entering HT_CloseFile\n");
   int fd = indexArray[indexDesc].fd;
-  
-  indexArray[indexDesc].used=0;  //We have to "delete" the file from indexArray.We will just assume that this position can be reused
-  indexArray[indexDesc].fd = -1; // -1 means that there is no file in position indexDesc
-  
+
+  indexArray[indexDesc].used = 0; // We have to "delete" the file from indexArray.We will just assume that this position can be reused
+  indexArray[indexDesc].fd = -1;  // -1 means that there is no file in position indexDesc
+
   CALL_BF(BF_CloseFile(fd));
-  
-  //printf("Exiting HT_CloseFile\n");
+
+  // printf("Exiting HT_CloseFile\n");
 
   return HT_OK;
-
 }
 
-void printRecord(Record record){
-  printf("Entry with id : %i, city : %s, name : %s, and surname : %s\n", 
-          record.id, record.city, record.name, record.surname);
+void printRecord(Record record)
+{
+  printf("Entry with id : %i, city : %s, name : %s, and surname : %s\n",
+         record.id, record.city, record.name, record.surname);
 }
 
-void printHashNode(HashNode node){
+void printHashNode(HashNode node)
+{
   printf("HashNode with value : %i, and block_num : %i\n", node.value, node.block_num);
 }
 
-int hashFunction(int id){
+int hashFunction(int id)
+{
   int depth = 2;
   int number_of_values = pow(2.0, (double)depth);
   return id % number_of_values;
 }
 
-HT_ErrorCode HT_InsertEntry(int indexDesc, Record record) {
-  
-  //printf("Entering HT_InsertEntry\n");
+HT_ErrorCode HT_InsertEntry(int indexDesc, Record record)
+{
+
+  // printf("Entering HT_InsertEntry\n");
   Entry entry;
   printRecord(record);
-  
-  if(indexArray[indexDesc].used == 0){
-    printf("Trying to access a closed file!\n");  // We can't/shouldn't insert into a closed file
-    return HT_ERROR;    
+
+  if (indexArray[indexDesc].used == 0)
+  {
+    printf("Trying to access a closed file!\n"); // We can't/shouldn't insert into a closed file
+    return HT_ERROR;
   }
-  
-  int fd =indexArray[indexDesc].fd;
+
+  int fd = indexArray[indexDesc].fd;
 
   BF_Block *block;
   BF_Block_Init(&block);
   int blockN;
-  int new = 0;  //1 if we create new entry, 0 if we add to existing one
+  int new = 0; // 1 if we create new entry, 0 if we add to existing one
   BF_GetBlockCounter(fd, &blockN);
   int value = hashFunction(record.id);
   HashNode hashNode[2];
@@ -213,7 +236,7 @@ HT_ErrorCode HT_InsertEntry(int indexDesc, Record record) {
     printf("allocating\n");
     //create new block at end
     CALL_BF(BF_AllocateBlock(fd, block));
-    strcpy(entry.header.desc, "test header");   //dummy header description
+    strcpy(entry.header.desc, "test header"); // dummy header description
     entry.header.size = 0;
     hashNode[pos].block_num = blockN;
     new = 1;    //note that we have a new entry
@@ -236,24 +259,24 @@ HT_ErrorCode HT_InsertEntry(int indexDesc, Record record) {
   BF_Block_SetDirty(block);
   CALL_BF(BF_UnpinBlock(block));
   BF_Block_Destroy(&block);
-  //printf("Exiting HT_InsertEntry\n");
+  // printf("Exiting HT_InsertEntry\n");
 
   return HT_OK;
-
 }
 
-HT_ErrorCode HT_PrintAllEntries(int indexDesc, int *id) {
-  
+HT_ErrorCode HT_PrintAllEntries(int indexDesc, int *id)
+{
+
   printf("Entering HT_PrintAllEntries\n");
   BF_Block *block;
   BF_Block_Init(&block);
-  
+
   int fd = indexArray[indexDesc].fd;
-  int i = 2;    //get 2nd block, 1st has info about file
+  int i = 2; // get 2nd block, 1st has info about file
   Entry entry;
   // HashNode hashNode[2];
 
-  //Testing 2nd block (block with hash codes)
+  // Testing 2nd block (block with hash codes)
   /*
   CALL_BF(BF_GetBlock(fd, 1, block));
   char *data = BF_Block_GetData(block);
@@ -263,7 +286,6 @@ HT_ErrorCode HT_PrintAllEntries(int indexDesc, int *id) {
   printHashNode(hashNode[1]);
   */
   ///////////////////////////////////////////
-
 
   CALL_BF(BF_GetBlock(fd, i, block));
   char *data = BF_Block_GetData(block);
@@ -275,17 +297,35 @@ HT_ErrorCode HT_PrintAllEntries(int indexDesc, int *id) {
   //print header info
   //printf("entry header is : %s\n", entry.header.desc);
 
-  //print records with specific id
-  for(int i = 0; i < entry.header.size; i++)
-    if(id == NULL)printRecord(entry.record[i]);   //if id not given, print all records
-    else
-      if(entry.record[i].id == (*id))printRecord(entry.record[i]);
+  // print records with specific id
+  for (int i = 0; i < entry.header.size; i++)
+    if (id == NULL)
+      printRecord(entry.record[i]); // if id not given, print all records
+    else if (entry.record[i].id == (*id))
+      printRecord(entry.record[i]);
 
   CALL_BF(BF_UnpinBlock(block));
-  
+
   BF_Block_Destroy(&block);
-  //printf("Exiting HT_PrintAllEntries\n");
+  // printf("Exiting HT_PrintAllEntries\n");
 
   return HT_OK;
+}
 
+HT_ErrorCode HashStatistics(char *filename)
+{
+  int id;
+  HT_OpenIndex(filename, &id);
+  int fd = indexArray[id].fd;
+
+  // get number of blocks
+  int nblocks;
+  CALL_BF(BF_GetBlockCounter(fd, &nblocks));
+  printf("File %s has %d blocks.\n", filename, nblocks);
+
+  // [pending hashing and bucket creation]
+
+  HT_CloseFile(id);
+
+  return HT_OK;
 }
