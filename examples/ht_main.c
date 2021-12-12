@@ -101,7 +101,7 @@ int main()
   printf("start...\n\n");
   ////////////////////////////////////////////////////////////////////////////////////////////////
   
-  Record record, record1, record2;
+  Record record, record1, record2, r3, r4, r5, r6, r7;
 
   record.id = 1;
   strcpy(record.city, cities[0]);
@@ -118,6 +118,31 @@ int main()
   strcpy(record2.name, names[2]);
   strcpy(record2.surname, surnames[2]);
 
+  r3.id = 4;
+  strcpy(r3.city, cities[3]);
+  strcpy(r3.name, names[3]);
+  strcpy(r3.surname, surnames[3]);
+
+  r4.id = 5;
+  strcpy(r4.city, cities[4]);
+  strcpy(r4.name, names[4]);
+  strcpy(r4.surname, surnames[4]);
+
+  r5.id = 6;
+  strcpy(r5.city, cities[5]);
+  strcpy(r5.name, names[5]);
+  strcpy(r5.surname, surnames[5]);
+
+  r6.id = 7;
+  strcpy(r6.city, cities[6]);
+  strcpy(r6.name, names[6]);
+  strcpy(r6.surname, surnames[6]);
+
+  r7.id = 8;
+  strcpy(r7.city, cities[7]);
+  strcpy(r7.name, names[7]);
+  strcpy(r7.surname, surnames[7]);
+  
 
   int id;
   int depth = 1;
@@ -125,6 +150,9 @@ int main()
   int want = 3;
   ////////////////////////////////////////////////////////////////////////////////////////////////
 
+  
+
+  
   HT_Init();
   HT_CreateIndex(filename, depth);
   HT_OpenIndex(filename, &id);
@@ -133,6 +161,13 @@ int main()
   HT_InsertEntry(id, record);
   HT_InsertEntry(id, record1);
   HT_InsertEntry(id, record2);
+  HT_InsertEntry(id, r3);
+  HT_InsertEntry(id, r4);
+  HT_InsertEntry(id, r5);
+  HT_InsertEntry(id, r6);
+  HT_InsertEntry(id, r7);
+  
+  
   
   printf("\n");
   HT_PrintAllEntries(id, &want);

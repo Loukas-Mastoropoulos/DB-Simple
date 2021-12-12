@@ -27,11 +27,10 @@ typedef struct
   char desc[30];
 } HashHeader;
 
-
 typedef struct
 {
   DataHeader header;
-  Record record[3];
+  Record record[(BF_BLOCK_SIZE - sizeof(DataHeader)) / sizeof(Record)];
 } Entry;
 
 typedef struct
@@ -59,11 +58,9 @@ IndexNode indexArray[MAX_OPEN_FILES];
 HT_ErrorCode HT_Init()
 {
 
-  // printf("This is HT_Init start\n");
-
   if (MAX_OPEN_FILES == 0)
   {
-    printf("Runner.exe needs at least one file to run.Please ensure that MAX_OPEN_FILES is not 0\n");
+    printf("Runner.exe needs at least one file to run. Please ensure that MAX_OPEN_FILES is not 0\n");
     return HT_ERROR;
   }
 
@@ -73,13 +70,7 @@ HT_ErrorCode HT_Init()
 
   int max_records = (BF_BLOCK_SIZE - sizeof(DataHeader)) / sizeof(Record);
   int max_hNodes = BF_BLOCK_SIZE / sizeof(HashNode);
-
-  //proof of max_records value
-  //printf("sizeof(DataHeader) = %li, BF_BLOCK_SIZE = %i, ( BF_BLOCK_SIZE - sizeof(DataHeader) = %li ), sizeof(Record) = %li\n Therefore max_records = %i\n",
-  //        sizeof(DataHeader), BF_BLOCK_SIZE, (BF_BLOCK_SIZE - sizeof(DataHeader)), sizeof(Record), max_records);
   
-
-  // printf("End of HT_Init\n");
   return HT_OK;
 }
 
@@ -103,14 +94,6 @@ HT_ErrorCode HT_CreateIndex(const char *filename, int depth)
   hashEntry.hashNode[1].value = 1;
   hashEntry.hashNode[1].block_num = 0;
 
-  /*
-  HashNode hashNode[2];
-  hashNode[0].value = 0;
-  hashNode[0].block_num = 0;
-  hashNode[1].value = 1;
-  hashNode[1].block_num = 0;
-  */
-
   // create first block for info
   CALL_BF(BF_AllocateBlock(fd, block));
   char *data = BF_Block_GetData(block);
@@ -124,7 +107,6 @@ HT_ErrorCode HT_CreateIndex(const char *filename, int depth)
   memcpy(data, &hashEntry, sizeof(HashEntry));
   BF_Block_SetDirty(block);
   CALL_BF(BF_UnpinBlock(block));
-
 
   BF_Block_Destroy(&block);
   printf("file was not created before\n");
@@ -222,7 +204,6 @@ HT_ErrorCode HT_InsertEntry(int indexDesc, Record record)
   int value = hashFunction(record.id);
 
   HashEntry hashEntry;
-  //HashNode hashNode[2];
 
   //get hashNodes
   CALL_BF(BF_GetBlock(fd, 1, block));
@@ -282,21 +263,17 @@ HT_ErrorCode HT_PrintAllEntries(int indexDesc, int *id)
   BF_Block *block;
   BF_Block_Init(&block);
 
-  
-
   int fd = indexArray[indexDesc].fd;
   int blockN;
   
   Entry entry;
-  HashEntry hashEntry;
-  //HashNode hashNode[2];  
+  HashEntry hashEntry;  
 
   //get hashNodes
   CALL_BF(BF_GetBlock(fd, 1, block));
   char *data = BF_Block_GetData(block);
   memcpy(&hashEntry, data, sizeof(HashEntry));
   CALL_BF(BF_UnpinBlock(block));
-  printf("Hash entry header : %s \n", hashEntry.header.desc);
 
   //if id == NULL -> print all entries
   if(id == NULL){
