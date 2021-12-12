@@ -136,7 +136,9 @@ int main()
   
   printf("\n");
   HT_PrintAllEntries(id, &want);
-  //HT_PrintAllEntries(id, NULL);
+
+  printf("\n");
+  HT_PrintAllEntries(id, NULL);
   
   HT_CloseFile(id);
 

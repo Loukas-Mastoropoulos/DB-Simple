@@ -19,9 +19,14 @@
 
 typedef struct
 {
-  char desc[30];
   int size;
 } DataHeader;
+
+typedef struct 
+{
+  char desc[30];
+} HashHeader;
+
 
 typedef struct
 {
@@ -31,15 +36,21 @@ typedef struct
 
 typedef struct
 {
-  int fd;
-  int used;
-} IndexNode;
-
-typedef struct
-{
   int value;
   int block_num;
 } HashNode;
+
+typedef struct
+{
+  HashHeader header;
+  HashNode hashNode[2];
+} HashEntry;
+
+typedef struct
+{
+  int fd;
+  int used;
+} IndexNode;
 
 int max_entries;
 int max_hNodes;
@@ -84,12 +95,21 @@ HT_ErrorCode HT_CreateIndex(const char *filename, int depth)
   int id;
   HT_OpenIndex(filename, &id);
   int fd = indexArray[id].fd;
+  
+  HashEntry hashEntry;
+  strcpy(hashEntry.header.desc, "dummy description");
+  hashEntry.hashNode[0].value = 0;
+  hashEntry.hashNode[0].block_num = 0;
+  hashEntry.hashNode[1].value = 1;
+  hashEntry.hashNode[1].block_num = 0;
+
+  /*
   HashNode hashNode[2];
   hashNode[0].value = 0;
   hashNode[0].block_num = 0;
   hashNode[1].value = 1;
   hashNode[1].block_num = 0;
-  
+  */
 
   // create first block for info
   CALL_BF(BF_AllocateBlock(fd, block));
@@ -101,7 +121,7 @@ HT_ErrorCode HT_CreateIndex(const char *filename, int depth)
   // create second block for hashing
   CALL_BF(BF_AllocateBlock(fd, block));
   data = BF_Block_GetData(block);
-  memcpy(data, hashNode, 2 * sizeof(HashNode));
+  memcpy(data, &hashEntry, sizeof(HashEntry));
   BF_Block_SetDirty(block);
   CALL_BF(BF_UnpinBlock(block));
 
@@ -200,31 +220,33 @@ HT_ErrorCode HT_InsertEntry(int indexDesc, Record record)
 
   BF_GetBlockCounter(fd, &blockN);
   int value = hashFunction(record.id);
-  HashNode hashNode[2];
+
+  HashEntry hashEntry;
+  //HashNode hashNode[2];
 
   //get hashNodes
   CALL_BF(BF_GetBlock(fd, 1, block));
   char *data = BF_Block_GetData(block);
-  memcpy(hashNode, data, 2*sizeof(HashNode));
+  memcpy(&hashEntry, data, sizeof(HashEntry));
 
   //find bucket
   int pos;
-  for(pos = 0; pos < 2; pos++)if(hashNode[pos].value == value)break;
+  for(pos = 0; pos < 2; pos++)if(hashEntry.hashNode[pos].value == value)break;
 
   //Check for allocated space
 
-  if(hashNode[pos].block_num == 0){
+  if(hashEntry.hashNode[pos].block_num == 0){
     //no space was allocated
 
     //update hashNode values
-    hashNode[pos].block_num = blockN;
-    memcpy(data, hashNode, 2*sizeof(HashNode));
+    hashEntry.hashNode[pos].block_num = blockN;
+    memcpy(data, &hashEntry, sizeof(HashEntry));
     BF_Block_SetDirty(block);
     CALL_BF(BF_UnpinBlock(block));
 
     //allocate block at the end
     CALL_BF(BF_AllocateBlock(fd, block));
-    strcpy(entry.header.desc, "test header"); // dummy header description
+    //strcpy(entry.header.desc, "test header"); // dummy header description
     entry.header.size = 0;
     
     new = 1;   
@@ -232,7 +254,7 @@ HT_ErrorCode HT_InsertEntry(int indexDesc, Record record)
   }else{
     //space has been previously allocated
     
-    blockN = hashNode[pos].block_num; //get pointer to data block
+    blockN = hashEntry.hashNode[pos].block_num; //get pointer to data block
     CALL_BF(BF_UnpinBlock(block));
 
     CALL_BF(BF_GetBlock(fd, blockN, block));
@@ -266,13 +288,15 @@ HT_ErrorCode HT_PrintAllEntries(int indexDesc, int *id)
   int blockN;
   
   Entry entry;
-  HashNode hashNode[2];  
+  HashEntry hashEntry;
+  //HashNode hashNode[2];  
 
   //get hashNodes
   CALL_BF(BF_GetBlock(fd, 1, block));
   char *data = BF_Block_GetData(block);
-  memcpy(hashNode, data, 2*sizeof(HashNode));
+  memcpy(&hashEntry, data, sizeof(HashEntry));
   CALL_BF(BF_UnpinBlock(block));
+  printf("Hash entry header : %s \n", hashEntry.header.desc);
 
   //if id == NULL -> print all entries
   if(id == NULL){
@@ -281,7 +305,7 @@ HT_ErrorCode HT_PrintAllEntries(int indexDesc, int *id)
     for(int i = 0; i < 2; i++){
 
       //get data block
-      blockN = hashNode[i].block_num;
+      blockN = hashEntry.hashNode[i].block_num;
       CALL_BF(BF_GetBlock(fd, blockN, block));
       data = BF_Block_GetData(block);
       memcpy(&entry, data, sizeof(Entry));
@@ -305,8 +329,8 @@ HT_ErrorCode HT_PrintAllEntries(int indexDesc, int *id)
 
   //find data block_num
   int pos;
-  for(pos = 0; pos < 2; pos++)if(hashNode[pos].value == value)break;
-  blockN = hashNode[pos].block_num;
+  for(pos = 0; pos < 2; pos++)if(hashEntry.hashNode[pos].value == value)break;
+  blockN = hashEntry.hashNode[pos].block_num;
 
   if(blockN == 0){
     printf("Data block was not allocated");
