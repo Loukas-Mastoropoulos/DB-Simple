@@ -69,9 +69,9 @@ HT_ErrorCode HT_CreateIndex(const char *filename, int depth) {
   int fd = indexArray[id].fd;
   HashNode hashNode[2];
   hashNode[0].value = 0;
-  hashNode[0].block_num = 2;
+  hashNode[0].block_num = 0;
   hashNode[1].value = 1;
-  hashNode[1].block_num = 3;
+  hashNode[1].block_num = 0;
   
 
   //create first block for info
@@ -88,8 +88,17 @@ HT_ErrorCode HT_CreateIndex(const char *filename, int depth) {
   BF_Block_SetDirty(block);
   CALL_BF(BF_UnpinBlock(block));
 
+  /*
+  //allocate 2 blocks needed for data
+  CALL_BF(BF_AllocateBlock(fd, block));
+  BF_Block_SetDirty(block);
+  CALL_BF(BF_UnpinBlock(block));
+
+  CALL_BF(BF_AllocateBlock(fd, block));
+  BF_Block_SetDirty(block);
+  CALL_BF(BF_UnpinBlock(block));*/
+
   BF_Block_Destroy(&block);
-  
   printf("file was not created before\n");
 
   HT_CloseFile(id);
@@ -182,24 +191,43 @@ HT_ErrorCode HT_InsertEntry(int indexDesc, Record record) {
   int blockN;
   int new = 0;  //1 if we create new entry, 0 if we add to existing one
   BF_GetBlockCounter(fd, &blockN);
+  int value = hashFunction(record.id);
+  HashNode hashNode[2];
 
-  if(blockN == 2){  //if there was no entry added to file before
-    
+  //get hashNodes
+  CALL_BF(BF_GetBlock(fd, 1, block));
+  char *data = BF_Block_GetData(block);
+  memcpy(hashNode, data, 2*sizeof(HashNode));
+  printHashNode(hashNode[0]);
+  printHashNode(hashNode[1]);
+  CALL_BF(BF_UnpinBlock(block));
+
+  int pos;
+  for(pos = 0; pos < 2; pos++)if(hashNode[pos].value == value)break;
+  printf("pos is %i\n", pos);
+  printf("block_num is %i\n", hashNode[pos].block_num);
+
+  //check if there is block allocated for data with that hash value
+  if(hashNode[pos].block_num == 0){
+
+    printf("allocating\n");
     //create new block at end
     CALL_BF(BF_AllocateBlock(fd, block));
     strcpy(entry.header.desc, "test header");   //dummy header description
     entry.header.size = 0;
+    hashNode[pos].block_num = blockN;
     new = 1;    //note that we have a new entry
 
-  }
-  else{
+  }else{
 
+    printf("block exists for that hash value \n");
     //if we don't need to create new entry get last block
     blockN = blockN - 1;
     CALL_BF(BF_GetBlock(fd, blockN, block));
+
   }
 
-  char *data = BF_Block_GetData(block);
+  data = BF_Block_GetData(block);
   if(new == 0)memcpy(&entry, data, sizeof(Entry)); //get previous data, if we're adding to old entry
   entry.record[entry.header.size] = record;  //add record
   (entry.header.size) ++;
@@ -241,8 +269,11 @@ HT_ErrorCode HT_PrintAllEntries(int indexDesc, int *id) {
   char *data = BF_Block_GetData(block);
   memcpy(&entry, data, sizeof(Entry));
   
+  int counter;
+  BF_GetBlockCounter(fd, &counter);
+  printf("Block counter is %i\n", counter);
   //print header info
-  printf("entry header is : %s\n", entry.header.desc);
+  //printf("entry header is : %s\n", entry.header.desc);
 
   //print records with specific id
   for(int i = 0; i < entry.header.size; i++)
