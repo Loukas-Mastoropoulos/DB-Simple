@@ -100,9 +100,7 @@ int main()
 
   printf("start...\n\n");
   ////////////////////////////////////////////////////////////////////////////////////////////////
-  int id;
-  int depth = 3;
-  const char *filename = "temp.db";
+  
   Record record, record1, record2;
 
   record.id = 1;
@@ -120,34 +118,31 @@ int main()
   strcpy(record2.name, names[2]);
   strcpy(record2.surname, surnames[2]);
 
+
+  int id;
+  int depth = 1;
+  const char *filename = "temp.db";
   int want = 2;
+  ////////////////////////////////////////////////////////////////////////////////////////////////
 
   HT_Init();
   HT_CreateIndex(filename, depth);
   HT_OpenIndex(filename, &id);
+  
   printf("\n");
-
   HT_InsertEntry(id, record);
   HT_InsertEntry(id, record1);
   HT_InsertEntry(id, record2);
+  
   printf("\n");
-
   // HT_PrintAllEntries(id, &want);
   HT_PrintAllEntries(id, NULL);
+  
   HT_CloseFile(id);
-
-  /*
-  // Trying to insert and print entries AFTER a file has closed.
-  // We should encounter error outputs and messages
-  HT_InsertEntry(id, record);   // Ensuring that trying to insert into a closed file will fail
-  HT_PrintAllEntries(id, NULL); // Ensuring that trying to print a closed file will fail
-  //Also,trying to close an already closed file should fail
-  HT_CloseFile(id);             //Ensuring that trying to close an already closed file will fail
-  */
 
   ////////////////////////////////////////////////////////////////////////////////////////////////
   char *test_name = "temp.db";
-  HashStatistics(test_name);
+  //HashStatistics(test_name); //it shouldn't work on closed file
   printf("\n...end\n");
   return 0;
 }

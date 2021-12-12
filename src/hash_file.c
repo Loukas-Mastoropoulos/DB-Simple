@@ -100,15 +100,6 @@ HT_ErrorCode HT_CreateIndex(const char *filename, int depth)
   BF_Block_SetDirty(block);
   CALL_BF(BF_UnpinBlock(block));
 
-  /*
-  //allocate 2 blocks needed for data
-  CALL_BF(BF_AllocateBlock(fd, block));
-  BF_Block_SetDirty(block);
-  CALL_BF(BF_UnpinBlock(block));
-
-  CALL_BF(BF_AllocateBlock(fd, block));
-  BF_Block_SetDirty(block);
-  CALL_BF(BF_UnpinBlock(block));*/
 
   BF_Block_Destroy(&block);
   printf("file was not created before\n");
@@ -120,36 +111,26 @@ HT_ErrorCode HT_CreateIndex(const char *filename, int depth)
 
 HT_ErrorCode HT_OpenIndex(const char *fileName, int *indexDesc)
 {
-
-  // printf("Entering HT_OpenIndex\n");
-
-  int found = 0;
+  
+  int found = 0;  //bool flag.
 
   // find empty spot
   for (int i = 0; i < MAX_OPEN_FILES; i++)
-  {
-
     if (indexArray[i].used == 0)
     {
-
       (*indexDesc) = i;
       found = 1;
       break;
     }
-  }
 
   // if table is full return error
-  if (found == 0)
-    return HT_ERROR;
+  if (found == 0)return HT_ERROR;
 
   int fd;
   CALL_BF(BF_OpenFile(fileName, &fd));
-  int pos = (*indexDesc);
-  indexArray[pos].fd = fd;
-
-  indexArray[pos].used = 1; // Position pos in now taken (a.k.a being used)
-
-  // printf("Exiting HT_OpenIndex\n");
+  int pos = (*indexDesc);   // Return position
+  indexArray[pos].fd = fd;  // Save fileDesc
+  indexArray[pos].used = 1; // Set position to used
 
   return HT_OK;
 }
@@ -166,12 +147,10 @@ HT_ErrorCode HT_CloseFile(int indexDesc)
   // printf("Entering HT_CloseFile\n");
   int fd = indexArray[indexDesc].fd;
 
-  indexArray[indexDesc].used = 0; // We have to "delete" the file from indexArray.We will just assume that this position can be reused
+  indexArray[indexDesc].used = 0; // Free up position
   indexArray[indexDesc].fd = -1;  // -1 means that there is no file in position indexDesc
 
   CALL_BF(BF_CloseFile(fd));
-
-  // printf("Exiting HT_CloseFile\n");
 
   return HT_OK;
 }
@@ -189,7 +168,7 @@ void printHashNode(HashNode node)
 
 int hashFunction(int id)
 {
-  int depth = 2;
+  int depth = 1;
   int number_of_values = pow(2.0, (double)depth);
   return id % number_of_values;
 }
@@ -197,13 +176,13 @@ int hashFunction(int id)
 HT_ErrorCode HT_InsertEntry(int indexDesc, Record record)
 {
 
-  // printf("Entering HT_InsertEntry\n");
   Entry entry;
   printRecord(record);
 
+  //File is closed
   if (indexArray[indexDesc].used == 0)
   {
-    printf("Trying to access a closed file!\n"); // We can't/shouldn't insert into a closed file
+    printf("Trying to access a closed file!\n");
     return HT_ERROR;
   }
 
@@ -212,7 +191,8 @@ HT_ErrorCode HT_InsertEntry(int indexDesc, Record record)
   BF_Block *block;
   BF_Block_Init(&block);
   int blockN;
-  int new = 0; // 1 if we create new entry, 0 if we add to existing one
+  int new = 0; //bool flag. 1 if we create new block, else 0
+
   BF_GetBlockCounter(fd, &blockN);
   int value = hashFunction(record.id);
   HashNode hashNode[2];
@@ -221,45 +201,49 @@ HT_ErrorCode HT_InsertEntry(int indexDesc, Record record)
   CALL_BF(BF_GetBlock(fd, 1, block));
   char *data = BF_Block_GetData(block);
   memcpy(hashNode, data, 2*sizeof(HashNode));
-  printHashNode(hashNode[0]);
-  printHashNode(hashNode[1]);
-  CALL_BF(BF_UnpinBlock(block));
 
+  //find bucket
   int pos;
   for(pos = 0; pos < 2; pos++)if(hashNode[pos].value == value)break;
-  printf("pos is %i\n", pos);
-  printf("block_num is %i\n", hashNode[pos].block_num);
 
-  //check if there is block allocated for data with that hash value
+  //Check for allocated space
+
   if(hashNode[pos].block_num == 0){
+    //no space was allocated
 
-    printf("allocating\n");
-    //create new block at end
+    //update hashNode values
+    hashNode[pos].block_num = blockN;
+    memcpy(data, hashNode, 2*sizeof(HashNode));
+    BF_Block_SetDirty(block);
+    CALL_BF(BF_UnpinBlock(block));
+
+    //allocate block at the end
     CALL_BF(BF_AllocateBlock(fd, block));
     strcpy(entry.header.desc, "test header"); // dummy header description
     entry.header.size = 0;
-    hashNode[pos].block_num = blockN;
-    new = 1;    //note that we have a new entry
+    
+    new = 1;   
 
   }else{
+    //space has been previously allocated
+    
+    blockN = hashNode[pos].block_num; //get pointer to data block
+    CALL_BF(BF_UnpinBlock(block));
 
-    printf("block exists for that hash value \n");
-    //if we don't need to create new entry get last block
-    blockN = blockN - 1;
     CALL_BF(BF_GetBlock(fd, blockN, block));
 
   }
 
+  //write new info
   data = BF_Block_GetData(block);
-  if(new == 0)memcpy(&entry, data, sizeof(Entry)); //get previous data, if we're adding to old entry
-  entry.record[entry.header.size] = record;  //add record
-  (entry.header.size) ++;
+  if(new == 0)memcpy(&entry, data, sizeof(Entry));  //if space was previously allocated, get previous data
+  entry.record[entry.header.size] = record;         //add record
+  (entry.header.size) ++;                           //update header size
  
   memcpy(data, &entry, sizeof(Entry));
   BF_Block_SetDirty(block);
   CALL_BF(BF_UnpinBlock(block));
   BF_Block_Destroy(&block);
-  // printf("Exiting HT_InsertEntry\n");
 
   return HT_OK;
 }
@@ -272,8 +256,9 @@ HT_ErrorCode HT_PrintAllEntries(int indexDesc, int *id)
   BF_Block_Init(&block);
 
   int fd = indexArray[indexDesc].fd;
-  int i = 2; // get 2nd block, 1st has info about file
+  int i = 2;
   Entry entry;
+
   // HashNode hashNode[2];
 
   // Testing 2nd block (block with hash codes)
@@ -291,13 +276,7 @@ HT_ErrorCode HT_PrintAllEntries(int indexDesc, int *id)
   char *data = BF_Block_GetData(block);
   memcpy(&entry, data, sizeof(Entry));
   
-  int counter;
-  BF_GetBlockCounter(fd, &counter);
-  printf("Block counter is %i\n", counter);
-  //print header info
-  //printf("entry header is : %s\n", entry.header.desc);
 
-  // print records with specific id
   for (int i = 0; i < entry.header.size; i++)
     if (id == NULL)
       printRecord(entry.record[i]); // if id not given, print all records
