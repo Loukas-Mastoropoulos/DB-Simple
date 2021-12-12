@@ -60,8 +60,13 @@ HT_ErrorCode HT_Init()
   for (int i = 0; i < MAX_OPEN_FILES; i++)
     indexArray[i].used = 0;
 
-  int max_entries = BF_BLOCK_SIZE / sizeof(Entry);
+  int max_records = (BF_BLOCK_SIZE - sizeof(DataHeader)) / sizeof(Record);
   int max_hNodes = BF_BLOCK_SIZE / sizeof(HashNode);
+
+  //proof of max_records value
+  //printf("sizeof(DataHeader) = %li, BF_BLOCK_SIZE = %i, ( BF_BLOCK_SIZE - sizeof(DataHeader) = %li ), sizeof(Record) = %li\n Therefore max_records = %i\n",
+  //        sizeof(DataHeader), BF_BLOCK_SIZE, (BF_BLOCK_SIZE - sizeof(DataHeader)), sizeof(Record), max_records);
+  
 
   // printf("End of HT_Init\n");
   return HT_OK;
