@@ -78,5 +78,7 @@ HT_ErrorCode HashStatistics(
 	char *filename /* όνομα του αρχείου που ενδιαφέρει */
 );
 
+int hashFunction(int, int);
+void printBits(size_t const size, void const * const ptr);
 
 #endif // HASH_FILE_H

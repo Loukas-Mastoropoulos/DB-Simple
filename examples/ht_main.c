@@ -10,6 +10,22 @@
 #define GLOBAL_DEPT 2    // you can change it if you want
 #define FILE_NAME "data.db"
 
+// Assumes little endian
+void printBits(size_t const size, void const * const ptr)
+{
+    unsigned char *b = (unsigned char*) ptr;
+    unsigned char byte;
+    int i, j;
+    
+    for (i = size-1; i >= 0; i--) {
+        for (j = 7; j >= 0; j--) {
+            byte = (b[i] >> j) & 1;
+            printf("%u", byte);
+        }
+    }
+    puts("");
+}
+
 const char *names[] = {
     "Yannis",
     "Christofos",
@@ -100,86 +116,47 @@ int main()
 
   printf("start...\n\n");
   ////////////////////////////////////////////////////////////////////////////////////////////////
-  
-  Record record, record1, record2, r3, r4, r5, r6, r7;
 
-  record.id = 1;
-  strcpy(record.city, cities[0]);
-  strcpy(record.name, names[0]);
-  strcpy(record.surname, surnames[0]);
-
-  record1.id = 2;
-  strcpy(record1.city, cities[1]);
-  strcpy(record1.name, names[1]);
-  strcpy(record1.surname, surnames[1]);
-
-  record2.id = 3;
-  strcpy(record2.city, cities[2]);
-  strcpy(record2.name, names[2]);
-  strcpy(record2.surname, surnames[2]);
-
-  r3.id = 4;
-  strcpy(r3.city, cities[3]);
-  strcpy(r3.name, names[3]);
-  strcpy(r3.surname, surnames[3]);
-
-  r4.id = 5;
-  strcpy(r4.city, cities[4]);
-  strcpy(r4.name, names[4]);
-  strcpy(r4.surname, surnames[4]);
-
-  r5.id = 6;
-  strcpy(r5.city, cities[5]);
-  strcpy(r5.name, names[5]);
-  strcpy(r5.surname, surnames[5]);
-
-  r6.id = 7;
-  strcpy(r6.city, cities[6]);
-  strcpy(r6.name, names[6]);
-  strcpy(r6.surname, surnames[6]);
-
-  r7.id = 8;
-  strcpy(r7.city, cities[7]);
-  strcpy(r7.name, names[7]);
-  strcpy(r7.surname, surnames[7]);
+  srand(time(NULL));
   
 
-  int id;
-  int depth = 2;
+  Record record;
+  int id, r;
+  int depth = 1;
   const char *filename = "temp.db";
   int want = 2;
+  int num = 9;
   ////////////////////////////////////////////////////////////////////////////////////////////////
 
-  
-
-  
   HT_Init();
   HT_CreateIndex(filename, depth);
   HT_OpenIndex(filename, &id);
   
   printf("\n");
-  HT_InsertEntry(id, record);
-  HT_InsertEntry(id, record1);
-  HT_InsertEntry(id, record2);
-  HT_InsertEntry(id, r3);
-  HT_InsertEntry(id, r4);
-  HT_InsertEntry(id, r5);
-  HT_InsertEntry(id, r6);
-  HT_InsertEntry(id, r7);
+  for (int j = 0; j < num; ++j) {
+    // create a record
+    record.id = j;
+    r = rand() % 12;
+    memcpy(record.name, names[r], strlen(names[r]) + 1);
+    r = rand() % 12;
+    memcpy(record.surname, surnames[r], strlen(surnames[r]) + 1);
+    r = rand() % 10;
+    memcpy(record.city, cities[r], strlen(cities[r]) + 1);
+
+    HT_InsertEntry(id, record);
+  }
   
-  
-  
-  printf("\n");
-  HT_PrintAllEntries(id, &want);
+  //printf("\n");
+  //HT_PrintAllEntries(id, &want);
 
   printf("\n");
   HT_PrintAllEntries(id, NULL);
   
   HT_CloseFile(id);
 
-  ////////////////////////////////////////////////////////////////////////////////////////////////
-  char *test_name = "temp.db";
-  //HashStatistics(test_name); //it shouldn't work on closed file
-  printf("\n...end\n");
+  // ////////////////////////////////////////////////////////////////////////////////////////////////
+  // char *test_name = "temp.db";
+  // //HashStatistics(test_name); //it shouldn't work on closed file
+  // printf("\n...end\n");
   return 0;
 }
