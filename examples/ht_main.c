@@ -118,14 +118,13 @@ int main()
   ////////////////////////////////////////////////////////////////////////////////////////////////
 
   srand(time(NULL));
-  
 
   Record record;
   int id, r;
   int depth = 1;
   const char *filename = "temp.db";
-  int want = 2;
-  int num = 9;
+  int want = 13;
+  int num = 17;
   ////////////////////////////////////////////////////////////////////////////////////////////////
 
   HT_Init();
@@ -146,17 +145,17 @@ int main()
     HT_InsertEntry(id, record);
   }
   
-  //printf("\n");
-  //HT_PrintAllEntries(id, &want);
-
   printf("\n");
-  HT_PrintAllEntries(id, NULL);
+  HT_PrintAllEntries(id, &want);
+
+  //printf("\n");
+  //HT_PrintAllEntries(id, NULL);
   
   HT_CloseFile(id);
 
   // ////////////////////////////////////////////////////////////////////////////////////////////////
-  // char *test_name = "temp.db";
-  // //HashStatistics(test_name); //it shouldn't work on closed file
+  char *test_name = "temp.db";
+  HashStatistics(test_name); //it shouldn't work on closed file
   // printf("\n...end\n");
   return 0;
 }

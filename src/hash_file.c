@@ -70,25 +70,18 @@ void printHashNode(HashNode node)
 
 uint hashFunction(int id, int depth)
 {
-  //id = id * 123456;
-
-  uint a; 
-  a = id << (32 - depth);
-  a = a >> (32 - depth);
   
-  // int b;  //8-9
-  // b = id >> 8;
-  // b = b & 3;
-  
-  // int c;  //12-14
-  // c = id >> 12;
-  // c = c & 7;
+  char *p = (char *) &id;
+  uint h = 0x811c9dc5;
+  int i;
 
-  // int cba = (c << 5) | (b << 3) | a;
+  for ( i = 0; i < sizeof(int); i++ )
+  h = ( h ^ p[i] ) * 0x01000193;
+  h = h >> (32 - depth);
 
-  // int number_of_values = pow(2.0, (double)depth);
-  printf("return value is %i\n",a);
-  return a;
+  return h;
+
+ 
 }
 
 
@@ -121,7 +114,8 @@ HT_ErrorCode HT_CreateIndex(const char *filename, int depth)
   BF_Block_Init(&block);
 
   Entry empty;
-  empty.header.local_depth = depth-1;
+  //empty.header.local_depth = depth-1;
+  empty.header.local_depth = depth;
   empty.header.size = 0;
 
   int id;
@@ -147,20 +141,15 @@ HT_ErrorCode HT_CreateIndex(const char *filename, int depth)
 
   for(int i = 0; i < hashN; i++){
 
-    if(i % 2 == 0){
+    //if(i % 2 == 0){
     BF_GetBlockCounter(fd, &blockN);
     CALL_BF(BF_AllocateBlock(fd, block));
     data = BF_Block_GetData(block);
     memcpy(data, &empty, sizeof(Entry));
     BF_Block_SetDirty(block);
     CALL_BF(BF_UnpinBlock(block));
-    }
+    //}
     hashEntry.hashNode[i].block_num = blockN;
-  }
-
-  printf("hashEntry size = %i\n", hashEntry.header.size);
-  for(int i=0; i < hashN; i++){
-    printHashNode(hashEntry.hashNode[i]);
   }
 
   // create second block for hashing
@@ -282,92 +271,104 @@ HT_ErrorCode HT_InsertEntry(int indexDesc, Record record)
   int size = entry.header.size;
   int local_depth = entry.header.local_depth;
 
+  
+
   //check for available space
   if(size >= max_records){
     //space needs to be allocated
-    printf("Overflow\n");
-  
-    //d' < d aka local_depth < global_depth
-    if(local_depth < depth){
-      // printf("local = %i, global = %i\n", local_depth, depth);
-      // printf("d' < d\n");
+    if(local_depth == depth){
 
-
-      int dif = depth - local_depth;
-      // printf("dif = %i\n", dif);
-      int numOfHashes = pow(2.0, (double) dif);
-      // printf("numOfHashes = %i\n", numOfHashes);
-      int first;
-      for(first = 0; first < hashEntry.header.size; first++)if(hashEntry.hashNode[first].block_num == blockN)break;
-      
-      // printf("first = %i\n", first);
-      int half = first + numOfHashes/2 -1;
-      int end = first + numOfHashes - 1;
-      // printf("half = %i, end = %i\n", half, end);
-
-      int blockNew;
-      BF_GetBlockCounter(fd, &blockNew);
-      CALL_BF(BF_AllocateBlock(fd, block));
-      CALL_BF(BF_UnpinBlock(block));
-
-
-      Entry old, new;
-      new.header.local_depth = local_depth + 1;
-      new.header.size = 0;
-
-      old = entry;
-      old.header.local_depth ++;
-      old.header.size = 0;
-
-      for(int i = half+1; i <= end; i++)hashEntry.hashNode[i].block_num = blockNew;
-      
-      CALL_BF(BF_GetBlock(fd, 1, block));
-      data = BF_Block_GetData(block);
-      memcpy(data, &hashEntry, sizeof(HashEntry));
-      BF_Block_SetDirty(block);
-      CALL_BF(BF_UnpinBlock(block));
-
-      for(int i = first; i <= end; i++)printHashNode(hashEntry.hashNode[i]);
-
-      for(int i = 0; i < entry.header.size; i++){
-        if(hashFunction(entry.record[i].id, depth) <= half){
-          old.record[old.header.size] = entry.record[i];
-          old.header.size ++;
-        }else{
-          new.record[new.header.size] = entry.record[i];
-          new.header.size ++;
-        }
+      //double table size
+      HashEntry new = hashEntry;
+      new.header.size = hashEntry.header.size * 2;
+      for(uint i = 0; i < new.header.size; i++){
+        new.hashNode[i].block_num = hashEntry.hashNode[i >> 1].block_num;
+        new.hashNode[i].value = i;
       }
 
-      if(hashFunction(record.id, depth) <= half){
-          old.record[old.header.size] = record;
-          old.header.size ++;
-        }else{
-          new.record[new.header.size] = record;
-          new.header.size ++;
-        }
-
-
-      //write old
-      CALL_BF(BF_GetBlock(fd, blockN, block));
-      data = BF_Block_GetData(block);
-      memcpy(data, &old, sizeof(Entry));
-      BF_Block_SetDirty(block);
-      CALL_BF(BF_UnpinBlock(block));
-
       //write new
-      CALL_BF(BF_GetBlock(fd, blockNew, block));
+      CALL_BF(BF_GetBlock(fd, 1, block));
       data = BF_Block_GetData(block);
-      memcpy(data, &new, sizeof(Entry));
+      memcpy(data, &new, sizeof(HashEntry));
       BF_Block_SetDirty(block);
       CALL_BF(BF_UnpinBlock(block));
 
-    }else {
-      //double table size
-      
+      depth++;
+
+      CALL_BF(BF_GetBlock(fd, 0, block));
+      data = BF_Block_GetData(block);
+      memcpy(data, &depth, sizeof(int));
+      BF_Block_SetDirty(block);
+      CALL_BF(BF_UnpinBlock(block));
+
+      hashEntry = new;
+
+    }
+    int dif = depth - local_depth;
+    int numOfHashes = pow(2.0, (double) dif);
+    int first;
+    for(first = 0; first < hashEntry.header.size; first++)if(hashEntry.hashNode[first].block_num == blockN)break;
+    
+    int half = first + numOfHashes/2 -1;
+    int end = first + numOfHashes - 1;
+
+    int blockNew;
+    BF_GetBlockCounter(fd, &blockNew);
+    CALL_BF(BF_AllocateBlock(fd, block));
+    CALL_BF(BF_UnpinBlock(block));
+
+    Entry old, new;
+    new.header.local_depth = local_depth + 1;
+    new.header.size = 0;
+
+    old = entry;
+    old.header.local_depth ++;
+    old.header.size = 0;
+
+    for(int i = half+1; i <= end; i++)hashEntry.hashNode[i].block_num = blockNew;
+    
+    CALL_BF(BF_GetBlock(fd, 1, block));
+    data = BF_Block_GetData(block);
+    memcpy(data, &hashEntry, sizeof(HashEntry));
+    BF_Block_SetDirty(block);
+    CALL_BF(BF_UnpinBlock(block));
+
+    for(int i = 0; i < entry.header.size; i++){
+      if(hashFunction(entry.record[i].id, depth) <= half){
+        old.record[old.header.size] = entry.record[i];
+        old.header.size ++;
+      }else{
+        new.record[new.header.size] = entry.record[i];
+        new.header.size ++;
+      }
     }
 
-    return HT_OK;  
+    if(hashFunction(record.id, depth) <= half){
+        old.record[old.header.size] = record;
+        old.header.size ++;
+      }else{
+        new.record[new.header.size] = record;
+        new.header.size ++;
+      }
+
+
+    //write old
+    CALL_BF(BF_GetBlock(fd, blockN, block));
+    data = BF_Block_GetData(block);
+    memcpy(data, &old, sizeof(Entry));
+    BF_Block_SetDirty(block);
+    CALL_BF(BF_UnpinBlock(block));
+
+    //write new
+    CALL_BF(BF_GetBlock(fd, blockNew, block));
+    data = BF_Block_GetData(block);
+    memcpy(data, &new, sizeof(Entry));
+    BF_Block_SetDirty(block);
+    CALL_BF(BF_UnpinBlock(block));
+
+  
+
+  return HT_OK;  
 
   }
   
@@ -390,7 +391,6 @@ HT_ErrorCode HT_InsertEntry(int indexDesc, Record record)
 HT_ErrorCode HT_PrintAllEntries(int indexDesc, int *id)
 {
 
-  printf("Entering HT_PrintAllEntries\n");
   BF_Block *block;
   BF_Block_Init(&block);
 
@@ -402,6 +402,7 @@ HT_ErrorCode HT_PrintAllEntries(int indexDesc, int *id)
 
   //get depth
   int depth;
+  
 
   CALL_BF(BF_GetBlock(fd, 0, block));
   char *data = BF_Block_GetData(block);
@@ -424,9 +425,10 @@ HT_ErrorCode HT_PrintAllEntries(int indexDesc, int *id)
     //for every hash value
     for(int i = 0; i < hashEntry.header.size; i++){
 
+      int block_num = hashEntry.hashNode[i].block_num;
+      printf("Records with hash value %i (block_num = %i)\n", i, block_num);
       //get data block
       blockN = hashEntry.hashNode[i].block_num;
-      printf("block_num = %i\n", blockN);
       CALL_BF(BF_GetBlock(fd, blockN, block));
       data = BF_Block_GetData(block);
       memcpy(&entry, data, sizeof(Entry));
@@ -437,6 +439,8 @@ HT_ErrorCode HT_PrintAllEntries(int indexDesc, int *id)
 
       CALL_BF(BF_UnpinBlock(block));
 
+      int dif = depth - entry.header.local_depth;
+      i += pow(2.0, (double) dif) - 1;
 
     }
     
@@ -479,14 +483,64 @@ HT_ErrorCode HashStatistics(char *filename)
   int id;
   HT_OpenIndex(filename, &id);
   int fd = indexArray[id].fd;
+  HashEntry hashEntry;
+  BF_Block *block;
+  BF_Block_Init(&block);
 
   // get number of blocks
   int nblocks;
   CALL_BF(BF_GetBlockCounter(fd, &nblocks));
   printf("File %s has %d blocks.\n", filename, nblocks);
 
-  // [pending hashing and bucket creation]
+  int depth;
+  CALL_BF(BF_GetBlock(fd, 0, block));
+  char *data = BF_Block_GetData(block);
+  memcpy(&depth, data, sizeof(int));
+  CALL_BF(BF_UnpinBlock(block));
 
+  CALL_BF(BF_GetBlock(fd, 1, block));
+  data = BF_Block_GetData(block);
+  memcpy(&hashEntry, data, sizeof(HashEntry));
+  CALL_BF(BF_UnpinBlock(block));
+
+  int iter = hashEntry.header.size;
+  int dataN = iter;
+  int min, max, total;
+  max = total = 0;
+  min = -1;
+  for(int i = 0; i < iter; i++){
+    
+    Entry entry;
+
+    int blockN = hashEntry.hashNode[i].block_num;
+    
+    CALL_BF(BF_GetBlock(fd, blockN, block));
+    data = BF_Block_GetData(block);
+    memcpy(&entry, data, sizeof(Entry));
+    CALL_BF(BF_UnpinBlock(block));
+
+    int num = entry.header.size;
+    //add to total
+    total += num;
+
+    //check for max
+    if(num > max)max = num;
+    
+    //check for min
+    if(num < min || min == -1)min = num;
+
+    int dif = depth - entry.header.local_depth;
+    i += pow(2.0, (double) dif) - 1;
+    dataN -= pow(2.0, (double) dif) - 1;
+
+  }
+
+  printf("Max number of records in bucket is %i\n", max);
+  printf("Min number of records in bucket is %i\n", min);
+  printf("Mean number of records in bucket is %f\n", (double) total / (double) dataN);
+  
+  
+  BF_Block_Destroy(&block);
   HT_CloseFile(id);
 
   return HT_OK;
