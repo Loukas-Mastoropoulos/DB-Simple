@@ -192,8 +192,10 @@ HT_ErrorCode HT_OpenIndex(const char *fileName, int *indexDesc)
     }
 
   // if table is full return error
-  if (found == 0)return HT_ERROR;
-
+  if (found == 0){
+    printf("The maximum number of open files has been reached.Please close a file and try again!\n");
+    return HT_ERROR;
+  }
   int fd;
   CALL_BF(BF_OpenFile(fileName, &fd));
   int pos = (*indexDesc);   // Return position
@@ -208,12 +210,12 @@ HT_ErrorCode HT_CloseFile(int indexDesc)
 
   if (indexArray[indexDesc].used == 0)
   {
-    printf("Can't close an already closed file!\n");
+    printf("Trying to close an already closed file!\n");
     return HT_ERROR;
   }
 
   // printf("Entering HT_CloseFile\n");
-int fd = indexArray[indexDesc].fd;
+  int fd = indexArray[indexDesc].fd;
 
   indexArray[indexDesc].used = 0; // Free up position
   //indexArray[indexDesc].fd = -1;  // -1 means that there is no file in position indexDesc
@@ -232,7 +234,7 @@ HT_ErrorCode HT_InsertEntry(int indexDesc, Record record)
   //File is closed
   if (indexArray[indexDesc].used == 0)
   {
-    printf("Trying to access a closed file!\n");
+    printf("Trying to insert into a closed file!\n");
     return HT_ERROR;
   }
 
@@ -404,6 +406,11 @@ HT_ErrorCode HT_PrintAllEntries(int indexDesc, int *id)
   BF_Block *block;
   BF_Block_Init(&block);
 
+  if(indexArray[indexDesc].used== 0){
+    printf("Can't print from a closed file!\n");
+    return HT_ERROR;
+  }
+
   int fd = indexArray[indexDesc].fd;
   int blockN;
   
@@ -431,7 +438,7 @@ HT_ErrorCode HT_PrintAllEntries(int indexDesc, int *id)
   //if id == NULL -> print all entries
   if(id == NULL){
 
-    
+    printf("NULL id was given. Printing all entries\n");
     //for every hash value
     for(int i = 0; i < hashEntry.header.size; i++){
 
@@ -468,7 +475,7 @@ HT_ErrorCode HT_PrintAllEntries(int indexDesc, int *id)
   blockN = hashEntry.hashNode[pos].block_num;
 
   if(blockN == 0){
-    printf("Data block was not allocated");
+    printf("Data block was not allocated\n");
     return HT_ERROR;
   }
 

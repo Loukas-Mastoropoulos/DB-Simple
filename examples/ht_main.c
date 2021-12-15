@@ -2,29 +2,15 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <unistd.h>
+
 #include "bf.h"
 #include "hash_file.h"
-#include <unistd.h>
 
 #define RECORDS_NUM 277 // you can change it if you want
 #define GLOBAL_DEPT 2    // you can change it if you want
 #define FILE_NAME "data.db"
 
-// Assumes little endian
-void printBits(size_t const size, void const * const ptr)
-{
-    unsigned char *b = (unsigned char*) ptr;
-    unsigned char byte;
-    int i, j;
-    
-    for (i = size-1; i >= 0; i--) {
-        for (j = 7; j >= 0; j--) {
-            byte = (b[i] >> j) & 1;
-            printf("%u", byte);
-        }
-    }
-    puts("");
-}
 
 const char *names[] = {
     "Yannis",
@@ -107,14 +93,17 @@ int main()
   printf("RUN PrintAllEntries\n");
   int id = rand() % RECORDS_NUM;
   CALL_OR_DIE(HT_PrintAllEntries(indexDesc, &id));
-  //CALL_OR_DIE(HT_PrintAllEntries(indexDesc, NULL));
+  CALL_OR_DIE(HT_PrintAllEntries(indexDesc, NULL));  //id == NULL so all entries should be printed
 
   printf("RUN HashStatistics\n");
   CALL_OR_DIE(HashStatistics(FILE_NAME));
   CALL_OR_DIE(HT_CloseFile(indexDesc));
   BF_Close();
   
-
+  CALL_OR_DIE(HT_PrintAllEntries(indexDesc, &id));  //Trying to print from a closed file should fail
+  CALL_OR_DIE(HT_InsertEntry(indexDesc, record));  //Trying to insert into a closed file should fail
+  CALL_OR_DIE(HT_CloseFile(indexDesc));            //Trying to cloase an already closed file should fail
+  
   // printf("start...\n\n");
   // ////////////////////////////////////////////////////////////////////////////////////////////////
 
