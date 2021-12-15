@@ -94,7 +94,7 @@ HT_ErrorCode HT_Init()
     return HT_ERROR;
   }
 
-  CALL_BF(BF_Init(LRU));
+  //CALL_BF(BF_Init(LRU));
   for (int i = 0; i < MAX_OPEN_FILES; i++)
     indexArray[i].used = 0;
 
@@ -106,9 +106,19 @@ HT_ErrorCode HT_Init()
 
 HT_ErrorCode HT_CreateIndex(const char *filename, int depth)
 {
+  if(filename == NULL || strcmp(filename,"") == 0){
+    printf("Please provide a name for the output file!\n");
+    return HT_ERROR;
+  }
 
-  printf("Name given : %s, max depth : %i\n", filename, depth);
+  if(depth < 0){
+    printf("Depth input is wrong! Please give a NON-NEGATIVE number!\n");
+    return HT_ERROR;
+  }
+
   CALL_BF(BF_CreateFile(filename));
+  printf("Name given : %s, max depth : %i\n", filename, depth);
+  // CALL_BF(BF_CreateFile(filename));
 
   BF_Block *block;
   BF_Block_Init(&block);
@@ -160,7 +170,7 @@ HT_ErrorCode HT_CreateIndex(const char *filename, int depth)
   CALL_BF(BF_UnpinBlock(block));
 
   BF_Block_Destroy(&block);
-  printf("file was not created before\n");
+  printf("File was not created before\n");
 
   HT_CloseFile(id);
 
@@ -203,10 +213,10 @@ HT_ErrorCode HT_CloseFile(int indexDesc)
   }
 
   // printf("Entering HT_CloseFile\n");
-  int fd = indexArray[indexDesc].fd;
+int fd = indexArray[indexDesc].fd;
 
   indexArray[indexDesc].used = 0; // Free up position
-  indexArray[indexDesc].fd = -1;  // -1 means that there is no file in position indexDesc
+  //indexArray[indexDesc].fd = -1;  // -1 means that there is no file in position indexDesc
 
   CALL_BF(BF_CloseFile(fd));
 

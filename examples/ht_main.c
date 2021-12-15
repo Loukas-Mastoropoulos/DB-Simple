@@ -6,7 +6,7 @@
 #include "hash_file.h"
 #include <unistd.h>
 
-#define RECORDS_NUM 1000 // you can change it if you want
+#define RECORDS_NUM 277 // you can change it if you want
 #define GLOBAL_DEPT 2    // you can change it if you want
 #define FILE_NAME "data.db"
 
@@ -78,7 +78,7 @@ const char *cities[] = {
 
 int main()
 {
-  /*
+  
   BF_Init(LRU);
 
   CALL_OR_DIE(HT_Init());
@@ -109,53 +109,54 @@ int main()
   CALL_OR_DIE(HT_PrintAllEntries(indexDesc, &id));
   //CALL_OR_DIE(HT_PrintAllEntries(indexDesc, NULL));
 
-
+  printf("RUN HashStatistics\n");
+  CALL_OR_DIE(HashStatistics(FILE_NAME));
   CALL_OR_DIE(HT_CloseFile(indexDesc));
   BF_Close();
-  */
-
-  printf("start...\n\n");
-  ////////////////////////////////////////////////////////////////////////////////////////////////
-
-  srand(time(NULL));
-
-  Record record;
-  int id, r;
-  int depth = 1;
-  const char *filename = "temp.db";
-  int want = 13;
-  int num = 17;
-  ////////////////////////////////////////////////////////////////////////////////////////////////
-
-  HT_Init();
-  HT_CreateIndex(filename, depth);
-  HT_OpenIndex(filename, &id);
   
-  printf("\n");
-  for (int j = 0; j < num; ++j) {
-    // create a record
-    record.id = j;
-    r = rand() % 12;
-    memcpy(record.name, names[r], strlen(names[r]) + 1);
-    r = rand() % 12;
-    memcpy(record.surname, surnames[r], strlen(surnames[r]) + 1);
-    r = rand() % 10;
-    memcpy(record.city, cities[r], strlen(cities[r]) + 1);
 
-    HT_InsertEntry(id, record);
-  }
-  
-  printf("\n");
-  HT_PrintAllEntries(id, &want);
-
-  //printf("\n");
-  //HT_PrintAllEntries(id, NULL);
-  
-  HT_CloseFile(id);
-
+  // printf("start...\n\n");
   // ////////////////////////////////////////////////////////////////////////////////////////////////
-  char *test_name = "temp.db";
-  HashStatistics(test_name); //it shouldn't work on closed file
-  // printf("\n...end\n");
+
+  // srand(time(NULL));
+
+  // Record record;
+  // int id, r;
+  // int depth = 1;
+  // const char *filename = "temp.db";
+  // int want = 13;
+  // int num = 17;
+  // ////////////////////////////////////////////////////////////////////////////////////////////////
+
+  // CALL_OR_DIE(HT_Init());
+  // CALL_OR_DIE(HT_CreateIndex(filename, depth));  //Αν βαλουμε CALL_OR_DIE εδω δεν μπορουμε να το τρεξουμε 2η φορα,που απο ο,τι καταλαβαινω ετσι θα επρεπε
+  // CALL_OR_DIE(HT_OpenIndex(filename, &id));
+  
+  // printf("\n");
+  // for (int j = 0; j < num; ++j) {
+  //   // create a record
+  //   record.id = j;
+  //   r = rand() % 12;
+  //   memcpy(record.name, names[r], strlen(names[r]) + 1);
+  //   r = rand() % 12;
+  //   memcpy(record.surname, surnames[r], strlen(surnames[r]) + 1);
+  //   r = rand() % 10;
+  //   memcpy(record.city, cities[r], strlen(cities[r]) + 1);
+
+  //   HT_InsertEntry(id, record);
+  // }
+  
+  // printf("\n");
+  // CALL_OR_DIE(HT_PrintAllEntries(id, &want));
+
+  // //printf("\n");
+  // //HT_PrintAllEntries(id, NULL);
+  
+  // CALL_OR_DIE(HT_CloseFile(id));
+
+  // // ////////////////////////////////////////////////////////////////////////////////////////////////
+  // char *test_name = "temp.db";
+  // HashStatistics(test_name); //it shouldn't work on closed file
+  // // printf("\n...end\n");
   return 0;
 }
