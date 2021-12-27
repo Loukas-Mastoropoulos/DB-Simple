@@ -88,7 +88,7 @@ uint hashFunction(int id, int depth)
 HT_ErrorCode HT_Init()
 {
 
-  if (MAX_OPEN_FILES == 0)
+  if (MAX_OPEN_FILES <= 0)
   {
     printf("Runner.exe needs at least one file to run. Please ensure that MAX_OPEN_FILES is not 0\n");
     return HT_ERROR;
@@ -118,13 +118,13 @@ HT_ErrorCode HT_CreateIndex(const char *filename, int depth)
 
   CALL_BF(BF_CreateFile(filename));
   printf("Name given : %s, max depth : %i\n", filename, depth);
-  // CALL_BF(BF_CreateFile(filename));
+
 
   BF_Block *block;
   BF_Block_Init(&block);
 
   Entry empty;
-  //empty.header.local_depth = depth-1;
+ 
   empty.header.local_depth = depth;
   empty.header.size = 0;
 
@@ -253,7 +253,7 @@ HT_ErrorCode HT_InsertEntry(int indexDesc, Record record)
   memcpy(&depth, data, sizeof(int));
   CALL_BF(BF_UnpinBlock(block));
 
-  BF_GetBlockCounter(fd, &blockN);
+
   int value = hashFunction(record.id, depth);
 
   HashEntry hashEntry;
@@ -442,10 +442,10 @@ HT_ErrorCode HT_PrintAllEntries(int indexDesc, int *id)
     //for every hash value
     for(int i = 0; i < hashEntry.header.size; i++){
 
-      int block_num = hashEntry.hashNode[i].block_num;
-      printf("Records with hash value %i (block_num = %i)\n", i, block_num);
+      int  blockN = hashEntry.hashNode[i].block_num;
+      printf("Records with hash value %i (block_num = %i)\n", i, blockN);
       //get data block
-      blockN = hashEntry.hashNode[i].block_num;
+
       CALL_BF(BF_GetBlock(fd, blockN, block));
       data = BF_Block_GetData(block);
       memcpy(&entry, data, sizeof(Entry));
